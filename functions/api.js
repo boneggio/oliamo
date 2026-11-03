@@ -308,7 +308,7 @@ async function tgLink_(db, env) {
   const up = await tgApi(env, 'getUpdates', { limit: 100 });
   if (!up.ok) return json({ ok: false, error: 'Telegram: ' + (up.description || 'token non valido') });
   const msgs = (up.result || []).map(u => u.message || u.edited_message || u.my_chat_member).filter(m => m && m.chat && !(m.new_chat_member && m.new_chat_member.status === 'left'));
-  if (!msgs.length) return json({ ok: false, error: 'Scrivi prima un messaggio al bot su Telegram (es. "ciao"), poi riprova.' });
+  if (!msgs.length) { const me = await tgApi(env, 'getMe', {}); return json({ ok: false, error: 'Scrivi prima un messaggio al bot ' + (me.ok ? '@' + me.result.username : '') + ' su Telegram (es. "ciao"), poi riprova.' }); }
   const chat = msgs[msgs.length - 1].chat;
   await db.prepare("INSERT OR REPLACE INTO settings (k, v) VALUES ('tg_chat', ?)").bind(String(chat.id)).run();
   const sent = await tgApi(env, 'sendMessage', { chat_id: chat.id, text: '🫒 OliAmo collegato! ' + (chat.type === 'private' ? 'Qui riceverai' : 'In questo gruppo arriverà') + ' un messaggio per ogni nuova prenotazione di olio.' });
