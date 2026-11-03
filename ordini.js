@@ -1,4 +1,4 @@
-/* OliAmo – scheda di una prenotazione: olio consegnato (litri) e soldi ricevuti, anche in parte o in anticipo.
+/* OliAmo – scheda di un ordine: olio consegnato (litri) e soldi ricevuti, anche in parte o in anticipo.
    Ogni "movimento" registra insieme litri consegnati e/o soldi incassati.
    OliOrd.row(o) / mini(o)                        → HTML della scheda / riga compatta
    OliOrd.bind(contenitore, post, ricarica, getOrdine) → gestisce i pulsanti
@@ -54,7 +54,7 @@
 @keyframes ooShake{25%{transform:translateX(-5px)}75%{transform:translateX(5px)}}
 .oo-m{display:flex;gap:6px;flex-wrap:wrap}
 .oo-m button{min-height:40px;padding:7px 12px;border-radius:99px;border:1.5px solid var(--line);background:var(--card);color:var(--ink);font:600 .82rem Inter,sans-serif;cursor:pointer}
-.oo-m button.on{border-color:var(--brand-2);background:color-mix(in srgb,var(--brand-2) 16%,var(--card));color:var(--brand)}
+.oo-m button.on{border-color:var(--brand-2);background:color-mix(in srgb,var(--brand-2) 16%,var(--card));color:var(--ink)}
 .oo-sum{font-size:.86rem;padding:8px 10px;border-radius:10px;background:var(--card);border:1px dashed var(--line)}
 .oo-del{color:var(--err)!important;font-size:.8rem!important}
 .oo-lk{border:0;background:none;padding:10px 4px;color:var(--brand);text-decoration:underline;cursor:pointer;font:inherit;font-size:.84rem}
@@ -125,7 +125,7 @@
   const latt = o => [o.q3 ? `${o.q3} × 3 lt` : '', o.q5 ? `${o.q5} × 5 lt` : ''].filter(Boolean).join(' + ');
   /** passo dei +/−: una lattina se l'ordine ha un solo tipo, altrimenti 1 litro */
   const step = o => o.q3 && !o.q5 ? 3 : o.q5 && !o.q3 ? 5 : 1;
-  const CASH = '<svg viewBox="0 0 24 16" aria-hidden="true"><rect x="1" y="1" width="22" height="14" rx="2.5" fill="#e3e8c4" stroke="#55621f" stroke-width="1.6"/><circle cx="12" cy="8" r="3.4" fill="none" stroke="#55621f" stroke-width="1.6"/><circle cx="5" cy="8" r="1.1" fill="#55621f"/><circle cx="19" cy="8" r="1.1" fill="#55621f"/></svg>';
+  const CASH = '<svg viewBox="0 0 24 16" aria-hidden="true"><rect x="1" y="1" width="22" height="14" rx="2.5" fill="#E3F2C8" stroke="#3D7A0E" stroke-width="1.6"/><circle cx="12" cy="8" r="3.4" fill="none" stroke="#3D7A0E" stroke-width="1.6"/><circle cx="5" cy="8" r="1.1" fill="#3D7A0E"/><circle cx="19" cy="8" r="1.1" fill="#3D7A0E"/></svg>';
   const ICO = { contanti: CASH, satispay: '<span class="sp">S</span>', paypal: '<span class="pp">P</span>' };
   const MNAME = { contanti: 'in contanti', satispay: 'con Satispay', paypal: 'con PayPal' };
   const MET = { contanti: '💶 Contanti', satispay: '<span class="sp">S</span> Satispay', paypal: '<span class="pp">P</span> PayPal' };
@@ -264,7 +264,7 @@
         })();
         return;
       }
-      if (a === 'del') { if (twice('del' + id, b, `Tocca di nuovo "Elimina" per spostare nel cestino la prenotazione di ${o.nome}`, toast)) run({ action: 'delOrders', ids: [id] }, "Spostata nel cestino: l'olio torna disponibile"); }
+      if (a === 'del') { if (twice('del' + id, b, `Tocca di nuovo "Elimina" per spostare nel cestino l'ordine di ${o.nome}`, toast)) run({ action: 'delOrders', ids: [id] }, "Spostata nel cestino: l'olio torna disponibile"); }
       else if (a === 'pdel') { if (twice('pdel' + b.dataset.pid, b, 'Tocca di nuovo × per annullare questo movimento', toast)) run({ action: 'payDel', pid: b.dataset.pid }, 'Movimento annullato'); }
     });
     el.addEventListener('toggle', e => { const d = e.target; if (!d.matches || !d.matches('details[data-adv]')) return; const id = d.closest('[data-oid]').dataset.oid; d.open ? advOpen.add(id) : advOpen.delete(id); }, true);
@@ -307,7 +307,7 @@
             <button type="button" data-hm="contanti">${MET.contanti}</button>
             <button type="button" data-hm="satispay">${MET.satispay}</button>
             <button type="button" data-hm="paypal">${MET.paypal}</button></div></div>
-          <div class="rw"><button class="ob pr">Registra</button><span class="hint">Risulta già consegnato. Lo trovi tra le prenotazioni con 🤝 A mano.</span></div>
+          <div class="rw"><button class="ob pr">Registra</button><span class="hint">Risulta già consegnato. Lo trovi tra gli ordini con 🤝 A mano.</span></div>
         </form></div></details>
       <details class="oo-adv" data-os="mh" hidden><summary>📋 Storico olio dato a mano <span data-mh-n></span> ▾</summary><div><div class="mh-s" data-mh-s></div><div class="mh-l" data-mh></div></div></details>`;
     // la parte "A mano" si disegna una volta sola (non si perde quello che stai scrivendo quando la pagina si aggiorna)
