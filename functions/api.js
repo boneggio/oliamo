@@ -15,7 +15,7 @@ const paypalLink = euro => PAYPAL_ME + '/' + (+euro || 0).toFixed(2) + 'EUR';
 const TZ = 'Europe/Rome';
 const L3 = 3, L5 = 5;    // litri delle due lattine
 const DEFAULT_MSG = "Al momento l'olio è finito. Appena ne abbiamo altro vi avviseremo. Grazie!";
-const NOPRICE_MSG = 'Le prenotazioni apriranno a breve: stiamo preparando i prezzi.';
+const NOPRICE_MSG = 'La vendita aprirà a breve: stiamo preparando i prezzi.';
 const TRASH_DAYS = 30;   // dopo quanti giorni il cestino si svuota da solo
 
 /* ---------- utilità ---------- */
@@ -32,8 +32,8 @@ const isDate = s => /^\d{4}-\d{2}-\d{2}$/.test(String(s || ''));
 const addDays = (ymd, n) => { const d = new Date(ymd + 'T12:00:00Z'); d.setUTCDate(d.getUTCDate() + n); return d.toISOString().slice(0, 10); };
 const dIt = ymd => new Date(ymd + 'T12:00:00Z').toLocaleDateString('it-IT', { weekday: 'short', day: 'numeric', month: 'numeric', timeZone: 'UTC' });
 
-// litri disponibili = caricati − CONSEGNATI (le prenotazioni non ancora consegnate non li toccano; il cestino non conta)
-const GIVEN = "(SELECT COALESCE(SUM(p.litri),0) FROM payments p JOIN orders o ON o.id = p.order_id WHERE COALESCE(o.eliminato,'') = '')";
+// litri disponibili = caricati − VENDUTI: ogni ordine (anche non ancora consegnato) toglie subito i suoi litri; il cestino non conta
+const GIVEN = "(SELECT COALESCE(SUM(litri),0) FROM orders WHERE COALESCE(eliminato,'') = '')";
 const LOADED = '(SELECT COALESCE(SUM(litri),0) FROM loads)';
 const AV = `(${LOADED} - ${GIVEN})`;
 const all = async (db, sql, ...b) => (await db.prepare(sql).bind(...b).all()).results;
@@ -311,7 +311,7 @@ async function tgLink_(db, env) {
   if (!msgs.length) { const me = await tgApi(env, 'getMe', {}); return json({ ok: false, error: 'Scrivi prima un messaggio al bot ' + (me.ok ? '@' + me.result.username : '') + ' su Telegram (es. "ciao"), poi riprova.' }); }
   const chat = msgs[msgs.length - 1].chat;
   await db.prepare("INSERT OR REPLACE INTO settings (k, v) VALUES ('tg_chat', ?)").bind(String(chat.id)).run();
-  const sent = await tgApi(env, 'sendMessage', { chat_id: chat.id, text: '🫒 OliAmo collegato! ' + (chat.type === 'private' ? 'Qui riceverai' : 'In questo gruppo arriverà') + ' un messaggio per ogni nuova prenotazione di olio.' });
+  const sent = await tgApi(env, 'sendMessage', { chat_id: chat.id, text: '🫒 OliAmo collegato! ' + (chat.type === 'private' ? 'Qui riceverai' : 'In questo gruppo arriverà') + ' un messaggio per ogni nuovo ordine di olio.' });
   return json({ ok: !!sent.ok, chat: chat.first_name || chat.title || '', error: sent.ok ? undefined : sent.description });
 }
 
@@ -399,7 +399,7 @@ export function onRequestOptions() {
   return new Response(null, { headers: { 'Access-Control-Allow-Origin': '*', 'Access-Control-Allow-Methods': 'GET, POST', 'Access-Control-Allow-Headers': 'Content-Type, X-Ovi-Session' } });
 }
 
-/** Prenotazione dal sito: "subito" (solo se c'è olio) o "per una data" (promemoria, si può anche a olio finito) */
+/** Ordine dal sito: si compra subito l'olio disponibile (niente più prenotazioni per una data) */
 async function order_(db, env, d) {
   const rid = d.rid ? 'rid:' + String(d.rid).slice(0, 64) : '';
   if (rid) {   // stesso invio ripetuto: restituisco la risposta di prima
@@ -408,7 +408,7 @@ async function order_(db, env, d) {
   }
   const s = await settings_(db), left = await available_(db);
   if (!(s.p3 > 0 && s.p5 > 0)) return json({ ok: false, closed: true, error: NOPRICE_MSG });
-  if (!s.open || (left <= 0 && d.tipo !== 'data')) return json({ ok: false, closed: true, error: s.msg || DEFAULT_MSG });
+  if (!s.open || left <= 0) return json({ ok: false, closed: true, error: s.msg || DEFAULT_MSG });
 
   const nome = clean(d.nome, 60), cognome = clean(d.cognome, 60);
   if (!nome || !cognome) return json({ ok: false, error: 'Nome e cognome obbligatori' });
@@ -416,34 +416,28 @@ async function order_(db, env, d) {
   const q5 = Math.max(0, Math.min(50, parseInt(d.q5, 10) || 0));
   const litri = q3 * L3 + q5 * L5;
   if (!litri) return json({ ok: false, error: 'Scegli almeno una lattina' });
-  if (d.tipo !== 'data' && litri > left) return json({ ok: false, error: 'Sono rimasti solo ' + lt(left) + ' di olio disponibili.' });
+  if (litri > left) return json({ ok: false, error: 'Sono rimasti solo ' + lt(left) + ' di olio disponibili.' });
   const euro = priceOf(s, q3, q5);
-  let perIl = '';
-  if (d.tipo === 'data') {   // prenotazione per un giorno scelto (da domani a 3 mesi)
-    if (!isDate(d.perIl) || d.perIl < addDays(today_(), 1)) return json({ ok: false, error: 'Scegli una data da domani in poi.' });
-    if (d.perIl > addDays(today_(), 90)) return json({ ok: false, error: 'Puoi prenotare al massimo per i prossimi 3 mesi.' });
-    perIl = d.perIl;
-  }
+  const perIl = '';
   const telefono = clean(d.telefono, 30), note = clean(d.note, 500);
 
   // inserisce solo se l'olio basta ancora (evita di prenotare due volte lo stesso)
   const r = await db.prepare(`INSERT INTO orders (id, data, nome, cognome, telefono, q3, q5, litri, euro, note, per_il)
     SELECT ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?
-    WHERE ${d.tipo === 'data' ? '1 = 1 OR ' : ''}${AV} >= ?`)
+    WHERE ${AV} >= ?`)
     .bind(newId('p'), now_(), nome, cognome, telefono, q3, q5, litri, euro, note, perIl, litri).run();
   if (!r.meta.changes) {
     const l2 = await available_(db);
     return json({ ok: false, error: l2 > 0 ? 'Sono rimasti solo ' + lt(l2) + ' di olio disponibili.' : (s.msg || DEFAULT_MSG), closed: l2 <= 0 });
   }
-  const res = { ok: true, litri, q3, q5, euro, left, satispay: SATISPAY_PHONE, paypal: paypalLink(euro), perIl };
+  const res = { ok: true, litri, q3, q5, euro, left: Math.max(0, left - litri), satispay: SATISPAY_PHONE, paypal: paypalLink(euro), perIl };
   if (rid) await db.prepare('INSERT OR REPLACE INTO idem (rid, res, ts) VALUES (?, ?, ?)').bind(rid, JSON.stringify(res), Date.now()).run();
 
-  await telegram(env, db, '🫒 OliAmo – nuova prenotazione\n' + nome + ' ' + cognome + ': ' + lattTxt(q3, q5) + ' (' + lt(litri) + ')' +
+  await telegram(env, db, '🫒 OliAmo – nuovo ordine\n' + nome + ' ' + cognome + ': ' + lattTxt(q3, q5) + ' (' + lt(litri) + ')' +
     ' · ' + eurTxt(euro) +
-    (perIl ? '\nPer il: ' + perIl.split('-').reverse().join('/') : '') +
     (telefono ? '\nTel: ' + telefono : '') +
     (note ? '\nNote: ' + note : '') +
-    '\nOlio disponibile (non ancora consegnato): ' + lt(left),
+    '\nOlio ancora disponibile: ' + lt(Math.max(0, left - litri)),
     [[{ text: '📋 Apri il report', url: SITE + '/report.html' }]]);
   return json(res);
 }
