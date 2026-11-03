@@ -1,0 +1,332 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<meta name="theme-color" content="#55621f">
+<title>OliAmo – La mia area</title>
+<link rel="icon" href="logo.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;9..144,800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#f6f3e6;--card:#fffdf5;--ink:#2a2a17;--muted:#5a5838;--line:#e2dcc2;--brand:#55621f;--brand-2:#687823;--yolk:#d4a72c;--err:#a8322a}
+@media (prefers-color-scheme:dark){:root{--bg:#15160d;--card:#1e2013;--ink:#efeedd;--muted:#b8b596;--line:#343620;--brand:#b9c76c;--brand-2:#cdd98a;--yolk:#e8c35a;--err:#f08a80}}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.5 Inter,system-ui,sans-serif}
+.top{background:linear-gradient(180deg,#e9c46a 0%,#f1dca0 45%,#a5ae63 46%,#6f7d36 100%);padding:18px 16px 40px;border-radius:0 0 50% 50%/0 0 28px 28px}
+.top .in{max-width:680px;margin:0 auto;display:flex;align-items:center;gap:12px}
+.top img{width:64px;filter:drop-shadow(0 4px 8px rgba(60,50,10,.3))}
+h1{font-family:Fraunces,Georgia,serif;font-weight:800;color:#fff;margin:0;font-size:1.7rem;line-height:1.1;text-shadow:0 2px 10px rgba(60,50,10,.65)}
+.top .rf{margin-left:auto;flex:none;border:0;background:rgba(255,255,255,.9);color:#4a551b;border-radius:99px;padding:11px 16px;font:600 .85rem Inter,sans-serif;cursor:pointer}
+.top .rf:disabled{opacity:.6}
+.badge{display:inline-block;margin-top:4px;padding:2px 10px;border-radius:99px;background:rgba(255,255,255,.9);color:#4a551b;font-size:.78rem;font-weight:600}
+.wrap{max-width:680px;margin:-22px auto 0;padding:0 16px 48px;display:grid;gap:14px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:18px;box-shadow:0 12px 34px -24px rgba(60,55,10,.5)}
+h2{font-family:Fraunces,Georgia,serif;font-size:1.15rem;margin:0 0 12px}
+.avail{display:flex;align-items:center;justify-content:space-between;gap:10px}
+.avail b{font-family:Fraunces,Georgia,serif;font-size:2.2rem;line-height:1;color:var(--brand)}
+.avail small{color:var(--muted)}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+@media (max-width:460px){.grid{grid-template-columns:1fr}}
+label{display:block;font-size:.85rem;font-weight:600;margin-bottom:4px}
+label .opt{font-weight:400;color:var(--muted)}
+input{width:100%;padding:11px 12px;border:1px solid var(--line);border-radius:10px;background:var(--bg);color:var(--ink);font:inherit}
+input:focus{outline:2px solid var(--yolk);outline-offset:1px;border-color:transparent}
+.field{margin-bottom:12px}
+.big{display:flex;align-items:center;gap:10px}
+.grid .big button{width:40px;height:40px}
+.big button{flex:none;width:44px;height:44px;border-radius:50%;border:1px solid var(--line);background:var(--card);color:var(--brand);font-size:1.4rem;cursor:pointer}
+.big input{text-align:center;font-size:1.3rem;font-weight:600}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+@media (max-width:520px){.two{grid-template-columns:1fr}}
+.split{margin:-4px 0 12px;font-size:.9rem;color:var(--muted)}.split b{color:var(--ink)}
+.split:empty{display:none}
+details.pren{border:2px solid var(--brand-2);padding:0;overflow:hidden}
+details.pren>summary{list-style:none;cursor:pointer;display:flex;align-items:center;gap:10px;flex-wrap:wrap;padding:16px 18px;background:color-mix(in srgb,var(--yolk) 28%,var(--card))}
+details.pren>summary::-webkit-details-marker{display:none}
+details.pren>summary h2{margin:0;flex:1 1 auto;font-size:1.3rem}
+details.pren>summary{position:relative;padding-right:48px}
+details.pren>summary::after{content:'▾';font-size:1.4rem;color:var(--brand);transition:transform .2s;position:absolute;right:18px;top:14px}
+details.pren[open]>summary::after{transform:rotate(180deg)}
+details.pren>.in{padding:14px 18px 18px}
+.pb{display:flex;gap:6px;flex-wrap:wrap;width:100%}
+.pb span{font:700 .78rem Inter,sans-serif;padding:3px 10px;border-radius:99px;background:var(--card);border:1px solid var(--line)}
+.pb span[data-go]{cursor:pointer}.pb span[data-go]:hover{border-color:var(--brand-2)}
+.pbox{border:2px solid var(--brand-2);background:color-mix(in srgb,var(--yolk) 28%,var(--card))}
+.pbox h2{margin:0 0 10px;font-size:1.3rem}
+.pbox .pb span{font-size:.9rem;padding:8px 14px}
+.pbox .pb span.on{outline:3px solid var(--brand);outline-offset:1px}
+.olh{display:flex;align-items:center;gap:10px;margin-bottom:10px}.olh h2{margin:0;flex:1}
+.olx{border:1px solid var(--line);background:var(--bg);border-radius:50%;width:44px;height:44px;cursor:pointer;color:var(--muted);font-size:1rem}
+#ords,#odone{display:grid;gap:8px}
+.pb .hot{background:var(--err);border-color:var(--err);color:#fff}
+.dst{font-size:.72rem;font-weight:700;padding:1px 7px;border-radius:99px;background:var(--bg);color:var(--muted);white-space:nowrap}.dst.r{background:color-mix(in srgb,#8a5cf6 16%,var(--card));color:#4b2a9a}
+.quick{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}
+.quick button{border:1px solid var(--line);background:var(--bg);color:var(--ink);border-radius:99px;padding:5px 12px;font:500 .85rem Inter,sans-serif;cursor:pointer}
+.btn{width:100%;padding:13px;border:0;border-radius:12px;background:linear-gradient(180deg,var(--brand-2),var(--brand));color:#fff;font:600 1rem Inter,sans-serif;cursor:pointer}
+@media (prefers-color-scheme:dark){.btn{color:#1b1f0a}}
+.btn:disabled{opacity:.55}
+.list{display:grid;gap:6px;margin-top:6px}
+.hist summary{list-style:none;cursor:pointer;display:flex;align-items:center;gap:10px}
+.hist summary::-webkit-details-marker{display:none}
+.hist summary h2{margin:0;flex:1}
+.hist summary::after{content:'▾';color:var(--muted);font-size:1.1rem;transition:transform .2s}
+.hist[open]>summary::after{transform:rotate(180deg)}
+.hist .n{color:var(--muted);font-size:.85rem}
+.hist[open]>summary{margin-bottom:8px}
+.hist.sub{margin-top:18px;padding-top:14px;border-top:1px solid var(--line)}
+.hist.sub h2{font-size:1rem}
+.it{display:grid;grid-template-columns:auto 1fr auto auto;gap:10px;align-items:center;padding:8px 10px;border-radius:10px;background:var(--bg);font-size:.92rem}
+.it .d{color:var(--muted);font-variant-numeric:tabular-nums;white-space:nowrap}
+.it .w{color:var(--muted);font-size:.8rem}
+.it b{font-variant-numeric:tabular-nums;white-space:nowrap}
+.x{border:0;background:transparent;color:var(--muted);font-size:1.1rem;cursor:pointer;width:28px;height:28px;border-radius:50%}
+.x:hover{background:color-mix(in srgb,var(--err) 14%,transparent);color:var(--err)}
+.more{background:none;border:0;color:var(--brand);text-decoration:underline;cursor:pointer;font:inherit;font-size:.9rem;margin-top:6px}
+.empty{color:var(--muted);font-size:.9rem}
+.err{color:var(--err)}
+.ord{display:grid;grid-template-columns:1fr auto;gap:4px 10px;align-items:center;padding:10px 12px;border-radius:12px;background:var(--bg)}
+.ord.done{opacity:.55}
+.ord h3{margin:0;font-size:.98rem}
+.ord .w{color:var(--muted);font-size:.82rem}
+.ord .e{font-family:Fraunces,Georgia,serif;font-weight:800;font-variant-numeric:tabular-nums}
+.ord .nt{grid-column:1/-1;font-size:.82rem;color:var(--muted);font-style:italic}
+.flags{grid-column:1/-1;display:flex;gap:8px;flex-wrap:wrap;margin-top:4px}
+.chip{display:inline-flex;align-items:center;gap:6px;padding:7px 12px;border-radius:99px;border:1.5px solid var(--line);background:var(--card);color:var(--ink);font:600 .85rem Inter,sans-serif;cursor:pointer}
+.chip .dot{width:16px;height:16px;border-radius:50%;border:2px solid currentColor;display:inline-grid;place-items:center;font-size:.7rem;line-height:1}
+.chip.on{border-color:var(--brand-2);color:var(--brand);background:color-mix(in srgb,var(--brand-2) 14%,var(--card))}
+.qu{display:flex;gap:6px}.qu input{min-width:0}
+.qu select{flex:none;padding:11px 8px;border:1px solid var(--line);border-radius:10px;background:var(--bg);color:var(--ink);font:inherit}
+.chip .ic{width:20px;height:14px;display:inline-block}
+.chip .ic.sp{width:17px;height:17px;border-radius:5px;background:#e8433d;color:#fff;font:800 .68rem/17px Inter,sans-serif;text-align:center}
+.chip.pm:not(.on) .ic{filter:grayscale(1);opacity:.55}
+.chip.on .dot{background:var(--brand-2);border-color:var(--brand-2);color:#fff}
+.seg{display:inline-flex;border:1px solid var(--line);border-radius:10px;overflow:hidden;margin-bottom:10px}
+.seg button{border:0;background:transparent;color:var(--ink);padding:7px 11px;font:500 .85rem Inter,sans-serif;cursor:pointer}
+.seg button.on{background:var(--brand);color:#fff}
+.osum{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px}
+.osum span{background:var(--bg);border-radius:99px;padding:4px 12px;font-size:.85rem}
+.toast{position:fixed;left:50%;bottom:20px;transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:10px 16px;border-radius:10px;opacity:0;transition:opacity .2s;pointer-events:none;z-index:9}
+.toast.on{opacity:1}
+footer{text-align:center;color:var(--muted);font-size:.8rem;margin-top:10px}
+</style>
+</head>
+<body>
+<header class="top"><div class="in"><img src="logo.svg" alt=""><div><h1 id="title">OliAmo</h1><span class="badge" id="badge">…</span></div><button class="rf" id="refresh" hidden>↻ Aggiorna</button></div></header>
+
+<main class="wrap">
+  <p class="card err" id="err" hidden></p>
+
+  <section class="card" id="availBox" hidden></section>
+
+  <section class="card pbox" id="ordCard" data-fold="pren" data-fold-open hidden>
+    <h2>🧺 Prenotazioni</h2>
+    <div class="pb" id="obadge"></div>
+  </section>
+
+  <section class="card" id="ordList" hidden>
+    <div class="olh"><h2 id="olTitle">Prenotazioni</h2><button type="button" class="olx" id="olClose" aria-label="Chiudi l'elenco">✕</button></div>
+    <div class="list" id="ords"></div>
+    <button class="more" id="omore" hidden>Mostra tutte</button>
+  </section>
+
+  <details class="card hist" id="odoneBox" hidden>
+    <summary><h2>📋 Storico ordini (pagati e consegnati)</h2><span class="n" id="odCount"></span></summary>
+    <div class="list" id="odone"></div>
+    <button class="more" id="odmore" hidden>Mostra tutte</button>
+  </details>
+
+  <section class="card" id="manoBox" hidden></section>
+
+  <section class="card" id="loadCard" data-fold="carica" data-fold-open hidden>
+    <h2>🫒 Carica l'olio disponibile</h2>
+    <form id="fl">
+      <div class="field"><label for="lq">Quanti litri?</label>
+        <div class="big" data-for="lq"><button type="button" data-d="-1" aria-label="Meno">−</button><input id="lq" type="number" inputmode="numeric" min="0" max="20000" value="0"><button type="button" data-d="1" aria-label="Più">+</button></div>
+        <div class="quick" id="lqq"><button type="button" data-add="3">+3 lt</button><button type="button" data-add="5">+5 lt</button><button type="button" data-add="10">+10 lt</button><button type="button" data-add="50">+50 lt</button></div></div>
+      <div class="grid">
+        <div class="field"><label for="ld">Giorno</label><input id="ld" type="date"></div>
+        <div class="field"><label for="ln">Note <span class="opt">(facoltative)</span></label><input id="ln" maxlength="200"></div>
+      </div>
+      <button class="btn" id="lgo">Aggiungi l'olio</button>
+    </form>
+  </section>
+
+
+  <details class="card hist" id="histCard" hidden>
+    <summary><h2 id="lTitle">I tuoi carichi</h2><span class="n" id="lCount"></span></summary>
+    <div class="list" id="loads"></div>
+    <button class="more" id="lmore" hidden>Mostra tutti</button>
+  </details>
+
+
+  <section class="card" id="costCard" data-fold="costi" hidden>
+    <h2>💶 Costi (frantoio, lattine e altro)</h2>
+    <form id="fc">
+      <div class="grid">
+        <div class="field"><label for="cdsc">Descrizione</label><input id="cdsc" maxlength="120" placeholder="Es. frantoio" list="cdl"><datalist id="cdl"></datalist></div>
+        <div class="field"><label for="cq">Quantità <span class="opt">(facoltativa)</span></label><div class="qu"><input id="cq" inputmode="decimal" placeholder="es. 25"><select id="cu" aria-label="Unità"><option value="kg">kg</option><option value="pz">pz</option><option value="l">litri</option><option value="h">ore</option></select></div></div>
+      </div>
+      <div class="field"><label for="cimp">Importo €</label><input id="cimp" inputmode="decimal" placeholder="0,00"></div>
+      <div class="field"><label for="cd">Giorno</label><input id="cd" type="date"></div>
+      <button class="btn" id="cgo">Aggiungi il costo</button>
+    </form>
+    <details class="hist sub">
+      <summary><h2>📋 Storico costi</h2><span class="n" id="cCount"></span></summary>
+      <div class="list" id="costs"></div>
+      <button class="more" id="cmore" hidden>Mostra tutti</button>
+    </details>
+  </section>
+
+  <section class="card" id="chartCard" data-fold="grafico" hidden>
+    <h2>📈 Vendite e costi</h2>
+    <div id="chart"></div>
+  </section>
+
+  <footer>OliAmo · olio extravergine dei nostri olivi</footer>
+</main>
+<div class="toast" id="toast"></div>
+
+<script src="tendine.js"></script>
+<script src="grafico.js"></script>
+<script src="ordini.js"></script>
+<script>
+const SCRIPT_URL = '/api';   // motore su Cloudflare (functions/api.js)
+const $ = id => document.getElementById(id);
+const esc = s => String(s ?? '').replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const eur = n => (n||0).toLocaleString('it-IT',{style:'currency',currency:'EUR'});
+const dIt = s => { const p=String(s).slice(0,10).split('-'); return p.length===3 ? `${+p[2]}/${+p[1]}/${p[0].slice(2)}` : s; };
+const pad = n => String(n).padStart(2,'0');
+const today = () => { const d=new Date(); return d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate()); };
+const TK = new URLSearchParams(location.search).get('k') || '';
+let D = null, chart = null, allL = false, allC = false, allO = false, allOD = false, of = null;
+
+function toast(t){ const el=$('toast'); el.textContent=t; el.classList.add('on'); clearTimeout(toast.t); toast.t=setTimeout(()=>el.classList.remove('on'),2400); }
+const post = body => fetch(SCRIPT_URL,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify({t:TK,...body})}).then(r=>r.json());
+const STOCK = OliOrd.stock($('availBox'), post, () => load(), { mano: $('manoBox') });
+
+async function load(){
+  try{
+    if(!TK) throw new Error('Questo link non è completo. Chiedi il tuo link personale a chi gestisce OliAmo.');
+    const j = await fetch(SCRIPT_URL+'?action=area&t='+encodeURIComponent(TK)).then(r=>r.json());
+    if(!j.ok) throw new Error(j.error||'Errore');
+    D = j; $('err').hidden=true; $('refresh').hidden=false; render();
+  }catch(e){ $('err').hidden=false; $('err').textContent=e.message; $('badge').hidden=true; }
+}
+
+function render(){
+  const inter = D.ruolo === 'intermedio';
+  $('title').textContent = 'Ciao ' + String(D.nome).split(' ')[0] + '!';
+  $('badge').textContent = inter ? 'Olio, costi e grafico' : 'Carico olio';
+  STOCK.update(D); $('availBox').hidden = false; $('manoBox').hidden = !inter;
+  $('loadCard').hidden = false;
+  $('lTitle').textContent = inter ? '📋 Storico carichi (di tutti)' : '📋 I tuoi carichi';
+  $('histCard').hidden = false;
+  const L = [...D.loads].sort((a,b)=>(b.data+b.ins).localeCompare(a.data+a.ins));
+  const LS = L, lsv = allL ? LS : LS.slice(0,8);
+  $('loads').innerHTML = lsv.map(l=>`<div class="it"><span class="d">${dIt(l.data)}</span><span>${inter?esc(l.utente):''}${l.note?` <span class="w">${esc(l.note)}</span>`:''}</span><b>${l.litri} lt</b>${l.utente===D.nome?`<button class="x" data-del="load" data-id="${esc(l.id)}" aria-label="Cancella">×</button>`:'<span></span>'}</div>`).join('') || '<p class="empty">Ancora nessun carico.</p>';
+  $('lmore').hidden = allL || LS.length <= 8;
+  $('lCount').textContent = L.length === 1 ? '1 carico' : L.length + ' carichi';
+  if (!inter) return;
+  $('costCard').hidden = false; $('chartCard').hidden = false; $('ordCard').hidden = false;
+  renderOrders();
+  const C = [...D.costs].sort((a,b)=>(b.data+b.ins).localeCompare(a.data+a.ins));
+  $('costs').innerHTML = (allC?C:C.slice(0,8)).map(c=>`<div class="it"><span class="d">${dIt(c.data)}</span><span>${esc(c.descr)}${c.qta?` <span class="w">${String(c.qta).replace('.',',')} ${c.unita} · ${eur(c.euro/c.qta)}/${c.unita}</span>`:''} <span class="w">${esc(c.utente)}</span></span><b>${eur(c.euro)}</b>${c.utente===D.nome?`<button class="x" data-del="cost" data-id="${esc(c.id)}" aria-label="Cancella">×</button>`:'<span></span>'}</div>`).join('') || '<p class="empty">Ancora nessun costo.</p>';
+  $('cmore').hidden = allC || C.length <= 8;
+  $('cCount').textContent = C.length === 1 ? '1 costo' : C.length + ' costi';
+  $('cdl').innerHTML = [...new Set(C.map(c=>c.descr))].slice(0,12).map(s=>`<option value="${esc(s)}">`).join('');
+  const cd = {sales:D.sales, costs:D.costs, loads:D.loads};
+  if (chart) chart.update(cd); else chart = OliChart($('chart'), cd);
+}
+
+// ----- carico olio (litri) -----
+$('ld').value = today(); $('cd').value = today();
+const nv = id => Math.max(0, parseInt($(id).value,10)||0);
+document.querySelectorAll('#fl .big').forEach(g => g.onclick = e => { const b=e.target.closest('button'); if(!b) return; const i=$(g.dataset.for); i.value = Math.max(0,(+i.value||0) + +b.dataset.d); });
+$('lqq').onclick = e => { const b=e.target.closest('button[data-add]'); if(!b) return; $('lq').value = nv('lq') + +b.dataset.add; };
+
+$('fl').onsubmit = async e => {
+  e.preventDefault();
+  const n = nv('lq');
+  if (n<1) return toast('Scrivi quanti litri');
+  const b=$('lgo'); b.disabled=true;
+  try{
+    const j = await post({action:'load', litri:n, data:$('ld').value, note:$('ln').value.trim()});
+    if(!j.ok) throw new Error(j.error);
+    toast(`Aggiunti ${n} lt. Disponibili: ${j.available} lt`);
+    $('lq').value=0; $('ln').value=''; await load();
+  }catch(x){ toast(x.message||'Non salvato, riprova'); }
+  finally{ b.disabled=false; }
+};
+
+// ----- costi -----
+$('fc').onsubmit = async e => {
+  e.preventDefault();
+  const imp = parseFloat($('cimp').value.replace(',','.'))||0, descr=$('cdsc').value.trim();
+  if(!descr) return toast('Scrivi una descrizione');
+  if(imp<=0) return toast('Scrivi l\'importo');
+  const b=$('cgo'); b.disabled=true;
+  try{
+    const j = await post({action:'cost', importo:imp, descr, data:$('cd').value, qta:$('cq').value.trim(), unita:$('cu').value});
+    if(!j.ok) throw new Error(j.error);
+    toast('Costo aggiunto: '+eur(imp)); $('cimp').value=''; $('cdsc').value=''; $('cq').value=''; await load();
+  }catch(x){ toast(x.message||'Non salvato, riprova'); }
+  finally{ b.disabled=false; }
+};
+
+// ----- cancellazioni -----
+let delArm = {};
+document.addEventListener('click', async e => {
+  const b = e.target.closest('button[data-del]'); if(!b) return;
+  // niente finestre di conferma (nel browser di Claude non funzionano): secondo tocco entro 4 secondi
+  const k = b.dataset.del + b.dataset.id;
+  if (delArm.k !== k || Date.now() - delArm.t > 4000) { delArm = { k, t: Date.now() }; return toast('Tocca di nuovo × per cancellare'); }
+  delArm = {};
+  b.disabled = true;
+  try{
+    const j = await post({action: {load:'delLoad', cost:'delCost'}[b.dataset.del], id:b.dataset.id});
+    if(!j.ok) throw new Error(j.error||'Non cancellato');
+    toast('Cancellato'); await load();
+  }catch(x){ b.disabled=false; toast(x.message); }
+});
+
+// ----- prenotazioni (solo intermedio) -----
+function renderOrders(){
+  const O = D.orders || [], done = OliOrd.done;
+  const dc = O.reduce((t,o)=>t+OliOrd.left(o),0), di = O.reduce((t,o)=>t+OliOrd.rest(o),0), aperte = O.filter(o=>!done(o)).length;
+  $('obadge').innerHTML = [aperte ? `<span data-go="">${aperte} ${aperte === 1 ? 'aperto' : 'aperti'}</span>` : '<span>Tutto in ordine ✓</span>', dc ? `<span data-go="nc">🫒 ${dc} lt da dare</span>` : '', di > 0.005 ? `<span data-go="np">💶 ${eur(di)} da avere</span>` : ''].join('');
+  $('ordList').hidden = of === null; $('odoneBox').hidden = false;
+  document.querySelectorAll('#obadge [data-go]').forEach(x => x.classList.toggle('on', x.dataset.go === of));
+  $('olTitle').textContent = ({'':'Ordini aperti', nc:'Olio da dare', np:'Soldi da avere'})[of] || 'Prenotazioni';
+  const V = of === null ? [] : O.filter(o => !done(o) && (of==='np' ? OliOrd.rest(o) > 0.005 : of==='nc' ? OliOrd.left(o) > 0 : true)).sort((a,b)=>b.data.localeCompare(a.data));
+  const vis = allO ? V : V.slice(0,15);
+  $('ords').innerHTML = vis.map(o => OliOrd.mini(o, { del: true })).join('') || `<p class="empty">${O.length ? 'Nessun ordine aperto in questo elenco.' : 'Ancora nessuna prenotazione.'}</p>`;
+  const F = O.filter(done).sort((a,b)=>b.data.localeCompare(a.data));
+  $('odone').innerHTML = (allOD ? F : F.slice(0,15)).map(o => OliOrd.mini(o, { del: true })).join('') || '<p class="empty">Ancora nessuna prenotazione completata.</p>';
+  $('odmore').hidden = allOD || F.length <= 15;
+  $('odCount').textContent = F.length === 1 ? '1 prenotazione' : F.length + ' prenotazioni';
+  $('omore').hidden = allO || V.length <= 15;
+}
+// clic sui tasti del riquadro Prenotazioni: mostra (o chiude) l'elenco di quel tasto
+$('obadge').onclick = e => { const s=e.target.closest('[data-go]'); if(!s) return;
+  of = of === s.dataset.go ? null : s.dataset.go; allO = false; renderOrders();
+  if (of !== null) setTimeout(()=>$('ordList').scrollIntoView({block:'start',behavior:'smooth'}),50); };
+$('olClose').onclick = () => { of = null; renderOrders(); };
+$('omore').onclick = () => { allO=true; renderOrders(); };
+$('odmore').onclick = () => { allOD=true; renderOrders(); };
+const ordReload = local => local ? renderOrders() : load();
+const ordGet = id => (D.orders||[]).find(o=>o.id===id);
+OliOrd.bind($('ords'), post, ordReload, ordGet); OliOrd.bind($('odone'), post, ordReload, ordGet);
+
+$('lmore').onclick = () => { allL=true; render(); };
+$('cmore').onclick = () => { allC=true; render(); };
+$('refresh').onclick = async () => { const b=$('refresh'); b.disabled=true; b.textContent='Aggiorno…'; await load(); b.disabled=false; b.textContent='↻ Aggiorna'; if($('err').hidden) toast('Aggiornato'); };
+// quando torni sulla pagina (es. dal telefono) si aggiorna da sola
+let lastLoad = Date.now();
+document.addEventListener('visibilitychange', () => { if (document.visibilityState==='visible' && D && Date.now()-lastLoad > 60000) { lastLoad = Date.now(); load(); } });
+load();
+</script>
+</body>
+</html>

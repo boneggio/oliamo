@@ -1,0 +1,9 @@
+# Configurazione Cloudflare Pages per OliAmo
+name = "oliamo"
+pages_build_output_dir = "."
+compatibility_date = "2026-10-01"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "oliamo"
+database_id = "f78cb16f-36d9-4c81-915a-b2d8b93c6066"
