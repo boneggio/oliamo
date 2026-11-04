@@ -16,6 +16,7 @@ const paypalLink = euro => PAYPAL_ME + '/' + (+euro || 0).toFixed(2) + 'EUR';
 const TZ = 'Europe/Rome';
 const DEFAULT_MSG = "Al momento l'olio è finito. Appena ne abbiamo altro vi avviseremo. Grazie!";
 const NOPRICE_MSG = 'La vendita aprirà a breve: stiamo preparando i prezzi.';
+const RIS_MSG = 'Questa pagina è riservata: chiedi il link a chi ti ha parlato del nostro olio.';
 const TRASH_DAYS = 30;   // dopo quanti giorni il cestino si svuota da solo
 
 /* ---------- utilità ---------- */
@@ -96,13 +97,17 @@ const fmtClean = L => (Array.isArray(L) ? L : []).slice(0, 12).map(f => ({
   nota: clean(f.nota, 60)   // vignetta facoltativa sulla scheda (es. "Formato ideale per la tua prima bruschetta!")
 })).filter(f => f.lt > 0 && f.lt <= 100).sort((a, b) => a.lt - b.lt || (a.tipo === 'bottiglia' ? -1 : 1));
 async function settings_(db) {
-  const s = {}; (await all(db, "SELECT k, v FROM settings WHERE k IN ('open','msg','p3','p5','formati')")).forEach(r => s[r.k] = r.v);
+  const s = {}; (await all(db, "SELECT k, v FROM settings WHERE k IN ('open','msg','p3','p5','formati','riservato','invito')")).forEach(r => s[r.k] = r.v);
   let formati;
   try { formati = s.formati ? fmtClean(JSON.parse(s.formati)) : null; } catch (e) { formati = null; }
   if (!formati) formati = fmtClean([{ id: 'l3', tipo: 'lattina', lt: 3, prezzo: s.p3, on: true }, { id: 'l5', tipo: 'lattina', lt: 5, prezzo: s.p5, on: true }]);
   const priced = formati.some(f => f.on && f.prezzo > 0);
-  return { open: s.open !== '0', msg: s.msg || '', formati, priced, p3: price_(s.p3), p5: price_(s.p5) };
+  return { open: s.open !== '0', msg: s.msg || '', formati, priced, p3: price_(s.p3), p5: price_(s.p5), riservato: s.riservato === '1', invito: s.invito || '' };
 }
+/** Sito riservato: la pagina pubblica e le richieste funzionano solo con il link (?c=CODICE, poi resta nel cookie oli_inv) */
+const cookieOf = (request, k) => { const m = (request.headers.get('Cookie') || '').match(new RegExp('(?:^|;\\s*)' + k + '=([^;]+)')); return m ? decodeURIComponent(m[1]) : ''; };
+const invitoOk = (s, request, d) => !s.riservato || (!!s.invito && [cookieOf(request, 'oli_inv'), d && d.c].some(c => c && same(String(c), s.invito)));
+const newInvito = () => b32enc(rnd(8)).slice(0, 10).toLowerCase();
 /** Pezzi richiesti (d.pezzi = { idFormato: quantità }); per le pagine vecchie anche d.q3 / d.q5 */
 function pick_(s, d, soloInVendita, max) {
   const F = s.formati.filter(f => !soloInVendita || (f.on && f.prezzo > 0));
@@ -362,6 +367,7 @@ export async function onRequestGet({ request, env, waitUntil }) {
   waitUntil(tidy_(db).catch(() => {}));
   if (p.action === 'info') {
     const s = await settings_(db), left = await available_(db), priced = s.priced;
+    if (!invitoOk(s, request, p)) return json({ ok: true, open: false, closedByHand: true, riservato: true, available: 0, msg: RIS_MSG, formati: [] });
     const formati = s.formati.filter(f => f.on && f.prezzo > 0).map(({ id, tipo, lt, prezzo, nota }) => ({ id, tipo, lt, prezzo, nota }));
     return json({ ok: true, open: s.open && priced && left > 0, closedByHand: !s.open || !priced, available: left,
       msg: !priced ? NOPRICE_MSG : (s.msg || DEFAULT_MSG), formati, p3: s.p3, p5: s.p5, minData: addDays(today_(), 1) });
@@ -397,7 +403,7 @@ export async function onRequestPost({ request, env, waitUntil }) {
   try {
     await ensure_(db);
     const d = JSON.parse(await request.text() || '{}');
-    if (!d.action) return await order_(db, env, d);
+    if (!d.action) return await order_(db, env, d, request);
     if (d.action === 'login') return await login_(db, env, request, d);
     if (d.action === 'pwReset') return await pwReset_(db, env, request, d);
 
@@ -442,13 +448,14 @@ export function onRequestOptions() {
 }
 
 /** Ordine dal sito: si compra subito l'olio disponibile (niente più prenotazioni per una data) */
-async function order_(db, env, d) {
+async function order_(db, env, d, request) {
   const rid = d.rid ? 'rid:' + String(d.rid).slice(0, 64) : '';
   if (rid) {   // stesso invio ripetuto: restituisco la risposta di prima
     const prev = await db.prepare('SELECT res FROM idem WHERE rid = ?').bind(rid).first();
     if (prev) return json(JSON.parse(prev.res));
   }
   const s = await settings_(db), left = await available_(db);
+  if (!invitoOk(s, request, d)) return json({ ok: false, closed: true, riservato: true, error: RIS_MSG });
   if (!s.priced) return json({ ok: false, closed: true, error: NOPRICE_MSG });
   if (!s.open || left <= 0) return json({ ok: false, closed: true, error: s.msg || DEFAULT_MSG });
 
@@ -625,6 +632,11 @@ async function purge_(db, where, ...b) {
 async function saveSettings_(db, d) {
   const st = [], put = (k, v) => st.push(db.prepare('INSERT OR REPLACE INTO settings (k, v) VALUES (?, ?)').bind(k, v));
   if ('open' in d) put('open', d.open ? '1' : '0');
+  if ('riservato' in d) {
+    put('riservato', d.riservato ? '1' : '0');
+    if (d.riservato && !(await getS(db, 'invito'))) d.nuovoInvito = true;
+  }
+  if (d.nuovoInvito) put('invito', newInvito());
   if ('msg' in d) put('msg', clean(d.msg, 300));
   for (const k of ['p3', 'p5']) if (k in d) {
     const v = price_(d[k]);
