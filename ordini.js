@@ -120,11 +120,24 @@
   const left = o => Math.max(0, o.litri - cons(o));
   const done = o => rest(o) <= 0.005 && left(o) <= 0;
   const unit = o => o.litri ? o.euro / o.litri : 0;
-  const lt = n => (+n || 0) + ' lt';
-  /** "2 × 3 lt + 1 × 5 lt" */
-  const latt = o => [o.q3 ? `${o.q3} × 3 lt` : '', o.q5 ? `${o.q5} × 5 lt` : ''].filter(Boolean).join(' + ');
-  /** passo dei +/−: una lattina se l'ordine ha un solo tipo, altrimenti 1 litro */
-  const step = o => o.q3 && !o.q5 ? 3 : o.q5 && !o.q3 ? 5 : 1;
+  const ltN = n => String(r2(n)).replace('.', ',');
+  const lt = n => ltN(n) + ' lt';
+  const pz = o => Array.isArray(o.pezzi) && o.pezzi.length ? o.pezzi : [o.q3 ? { tipo: 'lattina', lt: 3, n: o.q3 } : null, o.q5 ? { tipo: 'lattina', lt: 5, n: o.q5 } : null].filter(Boolean);
+  /** "2 × latt. 3 lt + 1 × bott. 0,5 lt" */
+  const latt = o => pz(o).map(x => `${x.n} × ${x.tipo === 'bottiglia' ? 'bott.' : 'latt.'} ${lt(x.lt)}`).join(' + ');
+  /** passo dei +/−: un pezzo se l'ordine ha un solo formato, altrimenti 1 litro (o mezzo, o un quarto) */
+  const step = o => { const P = pz(o); if (P.length === 1) return P[0].lt; return P.every(x => Number.isInteger(x.lt)) ? 1 : P.every(x => Number.isInteger(x.lt * 2)) ? 0.5 : 0.25; };
+  // Icone dei formati: lattina e bottiglia, la grandezza dipende dai litri
+  const TIN = '<rect x="5" y="9" width="38" height="49" rx="4" fill="#3D7A0E"/><rect x="5" y="9" width="38" height="5" rx="2" fill="#FFC21A"/><rect x="5" y="53" width="38" height="5" rx="2" fill="#FFC21A"/><rect x="19" y="3" width="10" height="7" rx="2" fill="#FFC21A" stroke="#B88A00" stroke-width="1"/><rect x="10" y="19" width="28" height="29" rx="4" fill="#FFF3C4"/><path d="M14 42 C19 38 24 33 33 26" stroke="#6B4A1E" stroke-width="1.5" fill="none" stroke-linecap="round"/><ellipse cx="19" cy="36" rx="2" ry="4.2" transform="rotate(-40 19 36)" fill="#5C9E1A"/><ellipse cx="27" cy="30" rx="2" ry="4.2" transform="rotate(50 27 30)" fill="#8CC63F"/><path d="M29 34 C29 34 25 39 25 41.5 C25 43.5 26.8 45 29 45 C31.2 45 33 43.5 33 41.5 C33 39 29 34 29 34Z" fill="#FFC21A"/><rect x="8" y="16" width="2.4" height="35" rx="1.2" fill="#fff" opacity=".22"/>';
+  const BOT = '<rect x="8.5" y="1" width="7" height="7" rx="1.5" fill="#FFC21A" stroke="#B88A00" stroke-width=".8"/><path d="M9.6 8 L14.4 8 L14.4 17 C14.4 21 20 22.5 20 28 L20 60 Q20 63 17 63 L7 63 Q4 63 4 60 L4 28 C4 22.5 9.6 21 9.6 17 Z" fill="#2F520C"/><rect x="5.6" y="33" width="12.8" height="19" rx="2" fill="#FFF3C4"/><path d="M12 36.5 C12 36.5 9.2 40 9.2 42 C9.2 43.6 10.4 44.8 12 44.8 C13.6 44.8 14.8 43.6 14.8 42 C14.8 40 12 36.5 12 36.5Z" fill="#FFC21A"/><ellipse cx="9.6" cy="48" rx="1.2" ry="2.6" transform="rotate(-55 9.6 48)" fill="#5C9E1A"/><ellipse cx="14.4" cy="48" rx="1.2" ry="2.6" transform="rotate(55 14.4 48)" fill="#8CC63F"/><rect x="6.2" y="26" width="1.6" height="33" rx=".8" fill="#fff" opacity=".25"/>';
+  /** f = {tipo, lt}; maxLt = litri del formato più grande; H = altezza massima in px */
+  function ico(f, maxLt, H) {
+    const s = Math.sqrt(Math.min(1, f.lt / (maxLt || f.lt)));
+    const h = Math.round(Math.min(H, H * (0.34 + 0.66 * s) * (f.tipo === 'bottiglia' ? 1.25 : 1)));
+    return f.tipo === 'bottiglia'
+      ? `<svg width="${Math.round(h * 24 / 64)}" height="${h}" viewBox="0 0 24 64" aria-hidden="true">${BOT}</svg>`
+      : `<svg width="${Math.round(h * 48 / 60)}" height="${h}" viewBox="0 0 48 60" aria-hidden="true">${TIN}</svg>`;
+  }
   const CASH = '<svg viewBox="0 0 24 16" aria-hidden="true"><rect x="1" y="1" width="22" height="14" rx="2.5" fill="#E3F2C8" stroke="#3D7A0E" stroke-width="1.6"/><circle cx="12" cy="8" r="3.4" fill="none" stroke="#3D7A0E" stroke-width="1.6"/><circle cx="5" cy="8" r="1.1" fill="#3D7A0E"/><circle cx="19" cy="8" r="1.1" fill="#3D7A0E"/></svg>';
   const ICO = { contanti: CASH, satispay: '<span class="sp">S</span>', paypal: '<span class="pp">P</span>' };
   const MNAME = { contanti: 'in contanti', satispay: 'con Satispay', paypal: 'con PayPal' };
@@ -155,7 +168,7 @@
       <h4>${f.mode === 'pay' ? '💶 Pagamento ricevuto' : '🫒 Olio consegnato'}</h4>
       <div class="oo-q"><span class="lb">Litri consegnati ora</span>
         <button type="button" class="st" data-oa="fn" data-d="-1" aria-label="Meno">−</button>
-        <input name="n" type="number" inputmode="numeric" min="0" max="${L}" step="${step(o)}" value="${f.n}" aria-label="Litri consegnati ora">
+        <input name="n" type="number" inputmode="decimal" min="0" max="${L}" step="${step(o)}" value="${f.n}" aria-label="Litri consegnati ora">
         <button type="button" class="st" data-oa="fn" data-d="1" aria-label="Più">+</button>
         <small style="color:var(--muted)">su ${lt(L)} da dare</small></div>
       ${f.mode === 'pay' && L ? `<div><button type="button" class="oo-lk" data-oa="fneq" ${eqN && f.n !== eqN ? '' : 'hidden'}>${eqTxt(eqN)}</button></div>` : ''}
@@ -244,7 +257,7 @@
         forms.set(id, nf); redraw(id); return;
       }
       if (a === 'fx') { forms.delete(id); redraw(id); return; }
-      if (a === 'fn' && f) { f.n = Math.max(0, Math.min(left(o), f.n + step(o) * +b.dataset.d)); autoE(o, f); redraw(id); return; }
+      if (a === 'fn' && f) { f.n = r2(Math.max(0, Math.min(left(o), f.n + step(o) * +b.dataset.d))); autoE(o, f); redraw(id); return; }
       if (a === 'fneq' && f) { f.n = eqOf(o, f); redraw(id); return; }
       if (a === 'fm' && f) { f.m = b.dataset.m; f.answered = true; if (f.m) { if (!f.e) { f.eTouched = false; autoE(o, f); } } else f.e = 0; redraw(id); return; }
       b.disabled = true;
@@ -271,7 +284,7 @@
     el.addEventListener('input', e => {
       const fm = e.target.closest('[data-of]'); if (!fm) return;
       const id = fm.dataset.of, o = getOrder(id), f = forms.get(id); if (!o || !f) return;
-      if (e.target.name === 'n') { f.n = Math.max(0, Math.min(left(o), parseInt(e.target.value, 10) || 0)); autoE(o, f); }
+      if (e.target.name === 'n') { f.n = r2(Math.max(0, Math.min(left(o), num(e.target.value)))); autoE(o, f); }
       if (e.target.name === 'e') { f.e = num(e.target.value); f.eTouched = true; }
       const s = fm.querySelector('.oo-sum'); if (s) s.innerHTML = sumTxt(o, f);
       if (e.target.name === 'n') { const ei = fm.querySelector('input[name=e]'); if (ei && !f.eTouched) ei.value = String(r2(f.e)).replace('.', ','); }
@@ -293,14 +306,13 @@
     opt = opt || {};
     addCss();
     const toast = t => (window.toast ? window.toast(t) : alert(t));
-    let hm = '', P = { p3: 0, p5: 0 };
+    let hm = '', F = [], FSIG = '';
     const elM = opt.mano || el;
     const box = h => `<div class="os oo" style="border:0;padding:0;background:none">${h}</div>`;
     const mano = `<details class="oo-adv" data-os="mano"><summary>🤝 Olio dato a mano ▾</summary><div>
         <form data-of="mano">
           <div class="rw"><input name="nome" placeholder="A chi l'hai dato" maxlength="60" style="flex:1 1 160px" aria-label="A chi l'hai dato" required></div>
-          <div class="rw"><label class="hint" style="display:flex;gap:6px;align-items:center">Lattine da 3 lt <input name="q3" type="number" inputmode="numeric" min="0" value="0" aria-label="Lattine da 3 litri"></label>
-            <label class="hint" style="display:flex;gap:6px;align-items:center">da 5 lt <input name="q5" type="number" inputmode="numeric" min="0" value="0" aria-label="Lattine da 5 litri"></label></div>
+          <div class="rw" data-fq></div>
           <div class="rw"><input name="euro" inputmode="decimal" placeholder="Prezzo €" aria-label="Prezzo" style="width:110px"><span class="hint" data-pz></span></div>
           <div class="rw"><span class="hint">Pagato?</span><div class="oo-m">
             <button type="button" data-hm="" class="on">Non ancora</button>
@@ -315,10 +327,17 @@
     let first = true;
     const draw = D => {
       const v = D.available || 0;
-      P = { p3: +(D.p3 ?? (D.settings && D.settings.p3)) || 0, p5: +(D.p5 ?? (D.settings && D.settings.p5)) || 0 };
+      F = (D.formati || (D.settings && D.settings.formati) || []);
       const nums = `<div class="os-n one"><div><small>🫒 Olio disponibile<br>(si prenota sul sito)</small><b data-n="v" class="${v < 0 ? 'neg' : ''}">${lt(v)}</b></div></div>`;
       if (first) { el.innerHTML = box(nums + (elM === el ? mano : '')); first = false; }
       else { const bv = el.querySelector('[data-n=v]'); bv.textContent = lt(v); bv.classList.toggle('neg', v < 0); }
+      const fq = elM.querySelector('[data-fq]'), sig = JSON.stringify(F);
+      if (fq && sig !== FSIG) {   // caselle dei formati: si ridisegnano solo se i formati cambiano (tiene i numeri già scritti)
+        const old = {}; fq.querySelectorAll('[data-fid]').forEach(i => old[i.dataset.fid] = i.value); FSIG = sig;
+        const max = Math.max(...F.map(f => f.lt), 1);
+        fq.innerHTML = F.map(f => { const nm = (f.tipo === 'bottiglia' ? 'Bottiglie' : 'Lattine') + ' da ' + lt(f.lt);
+          return `<label class="hint" style="display:flex;gap:6px;align-items:center">${ico(f, max, 30)}${nm}${f.on && f.prezzo > 0 ? '' : ' <small>(non in vendita)</small>'} <input data-fid="${esc(f.id)}" type="number" inputmode="numeric" min="0" value="${esc(old[f.id] || 0)}" aria-label="${nm}"></label>`; }).join('') || '<span class="hint">Prima crea i formati nel report (💶 Formati e prezzi).</span>';
+      }
       const hb = elM.querySelector('[data-os=mh]'); if (!hb) return;
       const M = (D.orders || []).filter(o => o.mano && !o.eliminato).sort((x, y) => y.data.localeCompare(x.data));
       hb.hidden = !D.orders; elM.querySelector('[data-os=mano]').hidden = !D.orders;
@@ -328,10 +347,10 @@
       hb.querySelector('[data-mh]').innerHTML = M.map(o => `<div class="mh-r"><span class="d">${dIt(o.data)}</span><b>${esc(o.nome)} ${esc(o.cognome || '')}</b><span>${latt(o)}</span><span>${eur(o.euro)}</span>${rest(o) > 0.005
         ? `<span class="r">da avere ${eur(rest(o))}</span>` : `<span class="ok">✓ ${usedM(o).map(m => ({ contanti: 'contanti', satispay: 'Satispay', paypal: 'PayPal' })[m] || '').join(' + ') || 'pagato'}</span>`}</div>`).join('') || "<p class=\"hint\">Ancora niente olio dato a mano.</p>";
     };
-    const price = (q3, q5) => r2(q3 * P.p3 + q5 * P.p5);
-    const qOf = f => [Math.max(0, parseInt(f.q3.value, 10) || 0), Math.max(0, parseInt(f.q5.value, 10) || 0)];
+    const qOf = f => { const o = {}; f.querySelectorAll('[data-fid]').forEach(i => { const v = Math.max(0, parseInt(i.value, 10) || 0); if (v) o[i.dataset.fid] = v; }); return o; };
+    const sumOf = (Q, k) => r2(F.reduce((t, f) => t + (Q[f.id] || 0) * f[k], 0));
     [...new Set([el, elM])].forEach(c => {
-      c.addEventListener('input', e => { const f = e.target.form; if (f && f.dataset.of === 'mano') { const [a, b] = qOf(f), p = price(a, b); f.querySelector('[data-pz]').textContent = (a || b) && p ? 'automatico: ' + eur(p) : ''; f.euro.placeholder = (a || b) && p ? String(p).replace('.', ',') + ' €' : 'Prezzo €'; } });
+      c.addEventListener('input', e => { const f = e.target.form; if (f && f.dataset.of === 'mano') { const Q = qOf(f), p = sumOf(Q, 'prezzo'), l = sumOf(Q, 'lt'); f.querySelector('[data-pz]').textContent = l ? lt(l) + (p ? ' · automatico: ' + eur(p) : '') : ''; f.euro.placeholder = l && p ? String(p).replace('.', ',') + ' €' : 'Prezzo €'; } });
       c.addEventListener('click', e => {
         const m = e.target.closest('[data-hm]');
         if (m) { hm = m.dataset.hm; m.parentNode.querySelectorAll('button').forEach(x => x.classList.toggle('on', x === m)); }
@@ -339,17 +358,17 @@
       c.addEventListener('submit', async e => {
         const f = e.target; if (!f.dataset || f.dataset.of !== 'mano') return;
         e.preventDefault();
-        const [q3, q5] = qOf(f), nome = f.nome.value.trim();
-        if (!nome) return toast("Scrivi a chi hai dato l'olio"); if (!q3 && !q5) return toast('Scrivi quante lattine');
+        const Q = qOf(f), nome = f.nome.value.trim();
+        if (!nome) return toast("Scrivi a chi hai dato l'olio"); if (!Object.keys(Q).length) return toast('Scrivi quante lattine o bottiglie');
         const btn = f.querySelector('.ob.pr'); btn.disabled = true;
-        try { const j = await post({ action: 'handOrder', nome, q3, q5, euro: f.euro.value.trim(), metodo: hm });
+        try { const j = await post({ action: 'handOrder', nome, pezzi: Q, euro: f.euro.value.trim(), metodo: hm });
           if (!j.ok) throw new Error(j.error);
-          toast(`${nome}: ${lt(q3 * 3 + q5 * 5)} dati a mano ✓`); f.reset(); hm = ''; f.querySelectorAll('[data-hm]').forEach(x => x.classList.toggle('on', x.dataset.hm === '')); f.querySelector('[data-pz]').textContent = ''; f.euro.placeholder = 'Prezzo €'; await reload(); }
+          toast(`${nome}: ${lt(sumOf(Q, 'lt'))} dati a mano ✓`); f.reset(); hm = ''; f.querySelectorAll('[data-hm]').forEach(x => x.classList.toggle('on', x.dataset.hm === '')); f.querySelector('[data-pz]').textContent = ''; f.euro.placeholder = 'Prezzo €'; await reload(); }
         catch (x) { toast(x.message || 'Non salvato'); } finally { btn.disabled = false; }
       });
     });
     return { update: draw };
   }
 
-  window.OliOrd = { row, bind, paid, rest, cons, left, done, eur, lt, latt, stock, mini };
+  window.OliOrd = { row, bind, paid, rest, cons, left, done, eur, lt, latt, ico, stock, mini };
 })();
