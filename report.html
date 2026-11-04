@@ -97,6 +97,7 @@ details.pren>.in{padding:14px}
 .fm .del{width:44px;height:44px;border-radius:10px;border:1px solid color-mix(in srgb,var(--err) 40%,transparent);background:transparent;color:var(--err);font-size:1.1rem;cursor:pointer}
 .fm-a{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
 .fm-a .btn{min-height:44px}
+.fm .fm-n{grid-column:2 / -1}
 @media (max-width:640px){.fm{grid-template-columns:48px 1fr 1fr;}.fm .pv{grid-row:span 2}.fm .del{justify-self:end}}
 @media (max-width:640px){.set{grid-template-columns:1fr}}
 .sw{display:flex;align-items:center;gap:10px;font-weight:600;cursor:pointer;user-select:none}
@@ -568,6 +569,7 @@ function fmDraw(){
       <div><label for="fp${i}">Prezzo €</label><input id="fp${i}" data-f="prezzo" inputmode="decimal" placeholder="es. 10,00" value="${esc(f.prezzo === '' || f.prezzo == null ? '' : typeof f.prezzo === 'number' ? f.prezzo.toFixed(2).replace('.', ',') : f.prezzo)}"></div>
       <label class="sw"><input type="checkbox" data-f="on" ${f.on ? 'checked' : ''}><i></i><span>${f.on ? 'Attivo' : 'Spento'}</span></label>
       <button type="button" class="del" data-del="${i}" aria-label="Togli ${nm.toLowerCase()} da ${esc(fmStr(f.lt) || '?')} litri">🗑</button>
+      <div class="fm-n"><label for="fn${i}">💬 Vignetta sul sito <span style="font-weight:400">(facoltativa)</span></label><input id="fn${i}" data-f="nota" maxlength="60" placeholder="Lascia vuoto se non serve" value="${esc(f.nota || '')}"></div>
     </div>`; }).join('') || '<p class="hint">Nessun formato: aggiungi una lattina o una bottiglia.</p>';
   const on = FM.filter(f => f.on && fmNum(f.prezzo) > 0 && fmNum(f.lt) > 0);
   $('prHint').textContent = (fmDirty ? '✏️ Modifiche non ancora salvate. ' : '') + (on.length ? 'Al litro: ' + on.map(f => `${f.tipo==='bottiglia'?'bott.':'latt.'} ${fmStr(fmNum(f.lt))} lt ${eur(fmNum(f.prezzo)/fmNum(f.lt))}`).join(' · ') : 'Nessun formato attivo con il prezzo: il sito resta chiuso.');
@@ -584,7 +586,7 @@ $('fmL').addEventListener('click', e => { const b = e.target.closest('[data-del]
   FM.splice(+b.dataset.del, 1); fmDirty = true; fmDraw(); });
 $('savePr').onclick = async () => {
   for (const f of FM) if (!(fmNum(f.lt) > 0)) return toast('Scrivi i litri di ogni formato (es. 0,5 – 1 – 3 – 5)');
-  try{ const j = await post({action:'settings', formati: FM.map(f => ({ id: f.id, tipo: f.tipo, lt: String(f.lt), prezzo: String(f.prezzo ?? ''), on: !!f.on }))}); if(!j.ok) throw new Error(j.error);
+  try{ const j = await post({action:'settings', formati: FM.map(f => ({ id: f.id, tipo: f.tipo, lt: String(f.lt), prezzo: String(f.prezzo ?? ''), on: !!f.on, nota: String(f.nota || '').trim() }))}); if(!j.ok) throw new Error(j.error);
     D.settings = j.settings; fmDirty = false; render(); toast('Formati e prezzi salvati ✓'); }catch(x){ toast(x.message||'Errore'); }
 };
 /* ---------- sicurezza ---------- */
