@@ -98,6 +98,8 @@ details.pren>.in{padding:14px}
 .fm-a{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
 .fm-a .btn{min-height:44px}
 .fm .fm-n{grid-column:2 / -1}
+.riserv{margin-top:16px;padding-top:14px;border-top:1px dashed var(--line);display:grid;gap:10px}
+.riserv .rl{display:flex;gap:8px;flex-wrap:wrap}.riserv .rl input{flex:1 1 240px;min-height:44px}.riserv .btn,.riserv .sw{min-height:44px}
 @media (max-width:640px){.fm{grid-template-columns:48px 1fr 1fr;}.fm .pv{grid-row:span 2}.fm .del{justify-self:end}}
 @media (max-width:640px){.set{grid-template-columns:1fr}}
 .sw{display:flex;align-items:center;gap:10px;font-weight:600;cursor:pointer;user-select:none}
@@ -248,6 +250,15 @@ tr.rej td{opacity:.5}tr.rej b{text-decoration:line-through}
         <button class="btn" id="saveSet">Salva</button>
       </div>
       <p class="hint" id="setHint"></p>
+      <div class="riserv">
+        <label class="sw"><input type="checkbox" id="ris"><i></i><span id="risL">Sito aperto a tutti</span></label>
+        <div class="rl" id="risBox" hidden>
+          <input id="risLink" readonly aria-label="Link da mandare">
+          <button class="btn" id="risCopy" type="button">📋 Copia link</button>
+          <button class="btn ghost" id="risNew" type="button">🔄 Cambia link</button>
+        </div>
+        <p class="hint" id="risHint"></p>
+      </div>
     </section>
 
     <section class="card" data-fold="telegram">
@@ -462,6 +473,7 @@ function render(){
     : D.available > 0 ? `Il sito vende fino a ${D.available} lt; poi si chiude da solo.`
     : 'Olio finito: il sito mostra il messaggio finché qualcuno non carica altro olio.';
   if (!fmDirty) { FM = (D.settings.formati || []).map(f => ({...f})); fmDraw(); }
+  risDraw();
 
   $('cPren').textContent = O.length; $('cCar').textContent = D.loads.length; $('cCos').textContent = D.costs.length; $('cUte').textContent = D.users.length;
   renderOrders(); renderTrash(); renderLoads(); renderCosts(); renderUsers();
@@ -555,6 +567,31 @@ $('saveSet').onclick = async () => {
     D.settings = j.settings; render(); toast('Salvato'); }catch(x){ toast(x.message||'Errore'); }
 };
 $('open').onchange = () => $('saveSet').click();
+/* ---------- sito riservato (solo con il link) ---------- */
+function risDraw(){
+  const s = D.settings, on = !!s.riservato;
+  $('ris').checked = on;
+  $('risL').textContent = on ? '🔒 Sito riservato: si apre solo con il link' : 'Sito aperto a tutti';
+  $('risBox').hidden = !on;
+  $('risLink').value = on && s.invito ? 'https://oliamo.boneggio.it/?c=' + s.invito : '';
+  $('risHint').textContent = on ? 'Manda questo link a chi vuoi: chi lo apre una volta resta dentro. Se cambi link, quello vecchio smette di funzionare per tutti.'
+    : "Chiunque conosca l'indirizzo può aprire il sito. Accendi l'interruttore per farlo aprire solo a chi ha il tuo link.";
+}
+$('ris').onchange = async () => {
+  const want = $('ris').checked;
+  try{ const j = await post({action:'settings', riservato: want}); if(!j.ok) throw new Error(j.error);
+    D.settings = j.settings; render(); toast(want ? 'Sito riservato ✓ Ora manda il link' : 'Sito aperto a tutti'); }
+  catch(x){ $('ris').checked = !want; toast(x.message||'Errore'); }
+};
+$('risCopy').onclick = async () => {
+  try{ await navigator.clipboard.writeText($('risLink').value); toast('Link copiato ✓'); }
+  catch(e){ $('risLink').select(); toast('Tieni premuto sul link per copiarlo'); }
+};
+$('risNew').onclick = async () => {
+  if (!sure('risNew', 'Tocca di nuovo per cambiare link: quello vecchio smetterà di funzionare')) return;
+  try{ const j = await post({action:'settings', nuovoInvito: true}); if(!j.ok) throw new Error(j.error);
+    D.settings = j.settings; render(); toast('Nuovo link pronto ✓'); }catch(x){ toast(x.message||'Errore'); }
+};
 /* ---------- formati (lattine e bottiglie) ---------- */
 let FM = [], fmDirty = false;
 const fmNum = v => parseFloat(String(v ?? '').replace(',', '.')) || 0;
