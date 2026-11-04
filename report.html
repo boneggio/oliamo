@@ -87,6 +87,17 @@ details.pren>.in{padding:14px}
 .set{display:grid;grid-template-columns:auto 1fr auto;gap:12px;align-items:center}
 .pricec{border:2px solid var(--yolk)}
 .prices{display:flex;flex-wrap:wrap;gap:10px;align-items:end}.prices>div{width:150px}.prices .hint{flex:1 1 200px;margin:0}
+.fmts{display:grid;gap:10px;margin:10px 0}
+.fm{display:grid;grid-template-columns:56px minmax(0,1.2fr) minmax(0,.8fr) minmax(0,.9fr) auto 44px;gap:10px;align-items:end;padding:10px 12px;border:1px solid var(--line);border-radius:14px;background:var(--bg)}
+.fm.off{opacity:.65}
+.fm .pv{height:56px;display:flex;align-items:flex-end;justify-content:center}
+.fm label{font-size:.78rem;font-weight:600;color:var(--muted);display:block;margin-bottom:3px}
+.fm input,.fm select{min-height:44px}
+.fm label.sw{display:flex;margin:0;min-height:44px;font-size:.85rem;color:var(--ink);font-weight:600;white-space:nowrap}
+.fm .del{width:44px;height:44px;border-radius:10px;border:1px solid color-mix(in srgb,var(--err) 40%,transparent);background:transparent;color:var(--err);font-size:1.1rem;cursor:pointer}
+.fm-a{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+.fm-a .btn{min-height:44px}
+@media (max-width:640px){.fm{grid-template-columns:48px 1fr 1fr;}.fm .pv{grid-row:span 2}.fm .del{justify-self:end}}
 @media (max-width:640px){.set{grid-template-columns:1fr}}
 .sw{display:flex;align-items:center;gap:10px;font-weight:600;cursor:pointer;user-select:none}
 .sw input{position:absolute;opacity:0;width:1px;height:1px}
@@ -217,13 +228,15 @@ tr.rej td{opacity:.5}tr.rej b{text-decoration:line-through}
     <div class="kpis" id="kpis"></div>
 
     <section class="card pricec" data-fold="prezzi" data-fold-open>
-      <h2>💶 Prezzi delle lattine</h2>
-      <div class="prices">
-        <div><label for="p3">Lattina da 3 lt (€)</label><input id="p3" inputmode="decimal" placeholder="es. 30,00"></div>
-        <div><label for="p5">Lattina da 5 lt (€)</label><input id="p5" inputmode="decimal" placeholder="es. 48,00"></div>
-        <button class="btn" id="savePr">Salva i prezzi</button>
-        <p class="hint" id="prHint"></p>
+      <h2>💶 Formati e prezzi</h2>
+      <p class="hint">Lattine e bottiglie che si possono chiedere sul sito. Nella pagina compaiono solo quelle <b>attive</b> e con il prezzo.</p>
+      <div class="fmts" id="fmL"></div>
+      <div class="fm-a">
+        <button class="btn ghost" id="fmAddL" type="button">＋ Lattina</button>
+        <button class="btn ghost" id="fmAddB" type="button">＋ Bottiglia</button>
+        <button class="btn" id="savePr" type="button">Salva formati e prezzi</button>
       </div>
+      <p class="hint" id="prHint"></p>
     </section>
 
     <section class="card" data-fold="vendita">
@@ -432,8 +445,8 @@ function render(){
   const P = O.flatMap(o=>o.payments||[]);
   const costi = sum(D.costs,'euro'), inc = sum(P,'euro');
   $('kpis').innerHTML = [
-    ['Olio disponibile', D.available + ' lt', 'hl', '<span class="sub">si prenota sul sito</span>'],
-    ['Olio da dare', O.reduce((t,o)=>t+OliOrd.left(o),0) + ' lt'],
+    ['Olio disponibile', OliOrd.lt(D.available), 'hl', '<span class="sub">si prenota sul sito</span>'],
+    ['Olio da dare', OliOrd.lt(O.reduce((t,o)=>t+OliOrd.left(o),0))],
     ['Soldi da avere', eur(sum(O,'euro')-inc)],
     ['Incassato', eur(inc), '', `<span class="sub">${CASH} ${eur(sum(P.filter(p=>p.metodo!=='satispay'&&p.metodo!=='paypal'),'euro'))} · ${SP} ${eur(sum(P.filter(p=>p.metodo==='satispay'),'euro'))}${P.some(p=>p.metodo==='paypal')?` · ${PP} ${eur(sum(P.filter(p=>p.metodo==='paypal'),'euro'))}`:''}</span>`],
     ['Costi', eur(costi)],
@@ -442,14 +455,12 @@ function render(){
 
   $('open').checked = D.settings.open; $('msg').value = D.settings.msg || '';
   $('openL').textContent = D.settings.open ? 'Vendita aperta' : 'Vendita chiusa';
-  const priced = D.settings.p3 > 0 && D.settings.p5 > 0;
-  $('setHint').textContent = !priced ? '⚠️ Prima imposta i prezzi delle lattine qui sopra: finché mancano, il sito non vende.'
+  const priced = D.settings.priced;
+  $('setHint').textContent = !priced ? '⚠️ Prima attiva almeno un formato con il prezzo (💶 Formati e prezzi): finché manca, il sito non vende.'
     : !D.settings.open ? 'La pagina mostra il messaggio di chiusura.'
     : D.available > 0 ? `Il sito vende fino a ${D.available} lt; poi si chiude da solo.`
     : 'Olio finito: il sito mostra il messaggio finché qualcuno non carica altro olio.';
-  if (document.activeElement !== $('p3')) $('p3').value = D.settings.p3 ? String(D.settings.p3).replace('.',',') : '';
-  if (document.activeElement !== $('p5')) $('p5').value = D.settings.p5 ? String(D.settings.p5).replace('.',',') : '';
-  $('prHint').textContent = priced ? `Al litro: 3 lt ${eur(D.settings.p3/3)} · 5 lt ${eur(D.settings.p5/5)}` : 'Prezzi non ancora impostati.';
+  if (!fmDirty) { FM = (D.settings.formati || []).map(f => ({...f})); fmDraw(); }
 
   $('cPren').textContent = O.length; $('cCar').textContent = D.loads.length; $('cCos').textContent = D.costs.length; $('cUte').textContent = D.users.length;
   renderOrders(); renderTrash(); renderLoads(); renderCosts(); renderUsers();
@@ -485,7 +496,7 @@ function renderOrders(){
     <td class="d">${dIt(o.data)}${o.perIl?`<div class="peril">per ${dShort(o.perIl)}</div>`:''}</td>
     <td><button type="button" class="det" data-det="${esc(o.id)}" aria-expanded="${openDet.has(o.id)}">${openDet.has(o.id)?'▾':'▸'} <b>${esc(o.nome)} ${esc(o.cognome)}</b></button>${o.mano?' <span class="stb rb">🤝 A mano</span>':''}${o.note?`<div class="note">“${esc(o.note)}”</div>`:''}</td>
     <td>${o.telefono?`<a href="tel:${esc(o.telefono)}" style="color:inherit">${esc(o.telefono)}</a>`:''}</td>
-    <td class="n"><b>${o.litri} lt</b><div class="d" style="font-size:.78rem">${OliOrd.latt(o)}</div></td>
+    <td class="n"><b>${OliOrd.lt(o.litri)}</b><div class="d" style="font-size:.78rem">${OliOrd.latt(o)}</div></td>
     <td class="n">${eur(o.euro)}</td>
     <td class="c"><span class="pay2 ${o.pagato&&!o.metodo?'old':''}" title="${o.pagato?(o.metodo==='satispay'?'Pagato con Satispay':o.metodo==='paypal'?'Pagato con PayPal':o.metodo==='contanti'?'Pagato in contanti':'Pagato'):'Da avere'}">${o.pagato&&!o.metodo?'<b class="okm">✓</b>':''}<button data-pay="contanti" data-id="${esc(o.id)}" class="${o.pagato&&o.metodo==='contanti'?'on':''}" aria-label="Pagato in contanti">${CASH}</button><button data-pay="satispay" data-id="${esc(o.id)}" class="${o.pagato&&o.metodo==='satispay'?'on':''}" aria-label="Pagato con Satispay">${SP}</button><button data-pay="paypal" data-id="${esc(o.id)}" class="${o.pagato&&o.metodo==='paypal'?'on':''}" aria-label="Pagato con PayPal">${PP}</button></span>${partPay(o)}</td>
     <td class="c"><input type="checkbox" data-flag="consegnato" data-id="${esc(o.id)}" ${o.consegnato?'checked':''} aria-label="Consegnato">${partDlv(o)}</td>
@@ -543,11 +554,38 @@ $('saveSet').onclick = async () => {
     D.settings = j.settings; render(); toast('Salvato'); }catch(x){ toast(x.message||'Errore'); }
 };
 $('open').onchange = () => $('saveSet').click();
+/* ---------- formati (lattine e bottiglie) ---------- */
+let FM = [], fmDirty = false;
+const fmNum = v => parseFloat(String(v ?? '').replace(',', '.')) || 0;
+const fmStr = v => v ? String(v).replace('.', ',') : '';
+function fmDraw(){
+  const max = Math.max(...FM.map(f => fmNum(f.lt)), 1);
+  $('fmL').innerHTML = FM.map((f, i) => { const nm = f.tipo === 'bottiglia' ? 'Bottiglia' : 'Lattina', l = fmNum(f.lt);
+    return `<div class="fm ${f.on ? '' : 'off'}" data-i="${i}">
+      <div class="pv">${l > 0 ? OliOrd.ico({tipo:f.tipo, lt:l}, max, 54) : ''}</div>
+      <div><label for="ft${i}">Tipo</label><select id="ft${i}" data-f="tipo"><option value="lattina" ${f.tipo!=='bottiglia'?'selected':''}>Lattina</option><option value="bottiglia" ${f.tipo==='bottiglia'?'selected':''}>Bottiglia</option></select></div>
+      <div><label for="fl${i}">Litri</label><input id="fl${i}" data-f="lt" inputmode="decimal" placeholder="es. 0,5" value="${esc(fmStr(f.lt))}"></div>
+      <div><label for="fp${i}">Prezzo €</label><input id="fp${i}" data-f="prezzo" inputmode="decimal" placeholder="es. 10,00" value="${esc(f.prezzo === '' || f.prezzo == null ? '' : typeof f.prezzo === 'number' ? f.prezzo.toFixed(2).replace('.', ',') : f.prezzo)}"></div>
+      <label class="sw"><input type="checkbox" data-f="on" ${f.on ? 'checked' : ''}><i></i><span>${f.on ? 'Attivo' : 'Spento'}</span></label>
+      <button type="button" class="del" data-del="${i}" aria-label="Togli ${nm.toLowerCase()} da ${esc(fmStr(f.lt) || '?')} litri">🗑</button>
+    </div>`; }).join('') || '<p class="hint">Nessun formato: aggiungi una lattina o una bottiglia.</p>';
+  const on = FM.filter(f => f.on && fmNum(f.prezzo) > 0 && fmNum(f.lt) > 0);
+  $('prHint').textContent = (fmDirty ? '✏️ Modifiche non ancora salvate. ' : '') + (on.length ? 'Al litro: ' + on.map(f => `${f.tipo==='bottiglia'?'bott.':'latt.'} ${fmStr(fmNum(f.lt))} lt ${eur(fmNum(f.prezzo)/fmNum(f.lt))}`).join(' · ') : 'Nessun formato attivo con il prezzo: il sito resta chiuso.');
+}
+const fmAdd = tipo => { FM.push({ id: '', tipo, lt: '', prezzo: '', on: true }); fmDirty = true; fmDraw(); const r = $('fmL').lastElementChild; if (r) r.querySelector('[data-f=lt]').focus(); };
+$('fmAddL').onclick = () => fmAdd('lattina');
+$('fmAddB').onclick = () => fmAdd('bottiglia');
+$('fmL').addEventListener('input', e => { const r = e.target.closest('[data-i]'), k = e.target.dataset.f; if (!r || !k || k === 'on' || k === 'tipo') return; FM[+r.dataset.i][k] = e.target.value; fmDirty = true;
+  const pv = r.querySelector('.pv'), l = fmNum(FM[+r.dataset.i].lt), max = Math.max(...FM.map(f => fmNum(f.lt)), 1); pv.innerHTML = l > 0 ? OliOrd.ico({tipo:FM[+r.dataset.i].tipo, lt:l}, max, 54) : ''; });
+$('fmL').addEventListener('change', e => { const r = e.target.closest('[data-i]'), k = e.target.dataset.f; if (!r || !k) return; const f = FM[+r.dataset.i];
+  if (k === 'on') f.on = e.target.checked; else if (k === 'tipo') f.tipo = e.target.value; else return; fmDirty = true; fmDraw(); });
+$('fmL').addEventListener('click', e => { const b = e.target.closest('[data-del]'); if (!b) return;
+  if (!sure('fmdel' + b.dataset.del, 'Tocca di nuovo per togliere questo formato (poi premi Salva)')) return;
+  FM.splice(+b.dataset.del, 1); fmDirty = true; fmDraw(); });
 $('savePr').onclick = async () => {
-  const v = id => $(id).value.trim();
-  if (!v('p3') || !v('p5')) return toast('Scrivi il prezzo di tutte e due le lattine');
-  try{ const j = await post({action:'settings', p3:v('p3'), p5:v('p5')}); if(!j.ok) throw new Error(j.error);
-    D.settings = j.settings; render(); toast('Prezzi salvati ✓'); }catch(x){ toast(x.message||'Errore'); }
+  for (const f of FM) if (!(fmNum(f.lt) > 0)) return toast('Scrivi i litri di ogni formato (es. 0,5 – 1 – 3 – 5)');
+  try{ const j = await post({action:'settings', formati: FM.map(f => ({ id: f.id, tipo: f.tipo, lt: String(f.lt), prezzo: String(f.prezzo ?? ''), on: !!f.on }))}); if(!j.ok) throw new Error(j.error);
+    D.settings = j.settings; fmDirty = false; render(); toast('Formati e prezzi salvati ✓'); }catch(x){ toast(x.message||'Errore'); }
 };
 /* ---------- sicurezza ---------- */
 let SEC = null;
@@ -639,8 +677,8 @@ $('trb').onclick = async e => {
 };
 $('csv').onclick = () => {
   const V = ordersView(), q = v => `"${String(v??'').replace(/"/g,'""')}"`;
-  const rows = [['Data','Nome','Cognome','Telefono','Lattine 3 lt','Lattine 5 lt','Totale litri','Totale €','Pagato','Consegnato','Per il','Note'],
-    ...V.map(o=>[o.data,o.nome,o.cognome,o.telefono,o.q3,o.q5,o.litri,String(o.euro).replace('.',','),o.pagato?'sì':'no',o.consegnato?'sì':'no',o.perIl,o.note])];
+  const rows = [['Data','Nome','Cognome','Telefono','Formati','Totale litri','Totale €','Pagato','Consegnato','Per il','Note'],
+    ...V.map(o=>[o.data,o.nome,o.cognome,o.telefono,OliOrd.latt(o),String(o.litri).replace('.',','),String(o.euro).replace('.',','),o.pagato?'sì':'no',o.consegnato?'sì':'no',o.perIl,o.note])];
   const a = document.createElement('a');
   a.href = URL.createObjectURL(new Blob(['﻿'+rows.map(r=>r.map(q).join(';')).join('\n')],{type:'text/csv'}));
   a.download = 'oliamo-ordini'+($('py').value?'-'+$('py').value:'')+'.csv'; a.click();
