@@ -68,6 +68,10 @@ input:focus,textarea:focus{outline:3px solid var(--yolk);outline-offset:1px;bord
 
 .eggs{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin:6px 0 16px}
 .egg{display:flex;flex-direction:column;align-items:center;gap:6px;border:2px solid var(--line);border-radius:22px;padding:16px 10px 14px;background:var(--card);transition:border-color .15s,background .15s,transform .15s}
+.eggs.has-v{margin-top:26px;row-gap:30px}
+.egg{position:relative}
+.vign{position:absolute;z-index:2;top:-22px;left:6px;right:6px;padding:7px 10px;border-radius:16px;background:var(--yolk);color:#24300E;font:700 .76rem/1.25 Fraunces,Georgia,serif;text-align:center;transform:rotate(-2.5deg);box-shadow:0 6px 14px -8px rgba(90,60,0,.6)}
+.vign::after{content:"";position:absolute;bottom:-9px;left:calc(50% - 22px);border:10px solid transparent;border-top-color:var(--yolk);border-bottom:0;border-left-width:4px}
 .egg.on{border-color:var(--leaf);background:color-mix(in srgb,var(--leaf) 14%,var(--card));transform:translateY(-2px)}
 .pic{height:112px;display:flex;align-items:flex-end;justify-content:center}
 .egg b{font-family:Fraunces,Georgia,serif;font-size:1.2rem;line-height:1.1;text-align:center}
@@ -220,8 +224,10 @@ function drawF(){
   const sig = JSON.stringify(F); if (sig === SIG) return; SIG = sig;
   Object.keys(q).forEach(k => { if (!F.some(f => f.id === k)) delete q[k]; });
   const max = Math.max(...F.map(f => f.lt), 1);
+  $('fmts').classList.toggle('has-v', F.some(f => f.nota));
   $('fmts').innerHTML = F.map(f => { const t = TIPO[f.tipo] || TIPO.lattina, nm = t[1] + ' da ' + ltN(f.lt) + ' litri';
-    return `<div class="egg" id="e_${esc(f.id)}">
+    return `<div class="egg" id="e_${esc(f.id)}">${f.nota ? `
+        <span class="vign">${esc(f.nota)}</span>` : ''}
         <div class="pic">${ico(f, max, 104)}</div>
         <b>${t[0]} da ${ltN(f.lt)} lt</b>
         <span class="price">${eur(f.prezzo)}</span>
