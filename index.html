@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>OliAmo – Olio extravergine dei nostri olivi</title>
-<meta name="description" content="Compra l'olio extravergine dei nostri olivi in lattine da 3 o 5 litri. Basta nome e cognome.">
+<meta name="description" content="Richiedi l'olio extravergine dei nostri olivi in lattine da 3 o 5 litri. Basta nome e cognome.">
 <meta name="theme-color" content="#3D7A0E">
 <meta property="og:type" content="website">
 <meta property="og:url" content="https://oliamo.boneggio.it/">
@@ -197,15 +197,15 @@ footer svg{width:120px;height:28px}
 
     <div class="field"><label for="note">Note <span class="opt">(facoltative)</span></label><textarea id="note" rows="2" maxlength="500" placeholder="Vuoi dirci qualcosa?"></textarea></div>
 
-    <button class="btn" id="go" type="submit"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 4h2l2.4 11.2a2 2 0 0 0 2 1.6h8.2a2 2 0 0 0 2-1.5L21 8H6.2"/><circle cx="10" cy="20" r="1.4"/><circle cx="18" cy="20" r="1.4"/></svg><span id="goT">Compra l'olio</span></button>
+    <button class="btn" id="go" type="submit"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M22 2 11 13"/><path d="M22 2 15 22l-4-9-9-4Z"/></svg><span id="goT">Invia la richiesta</span></button>
     <div class="msg" id="msg"></div>
   </form>
 
   <div class="card done" id="done">
     <img class="logo" src="logo.svg" alt="">
     <h2 style="justify-content:center">Grazie <span id="dn"></span>!</h2>
-    <p>Abbiamo ricevuto il tuo ordine di <b id="dk"></b>,<br>per un totale di <b id="de"></b>.</p>
-    <button class="link" id="again">Fai un altro ordine</button>
+    <p>Abbiamo ricevuto la tua richiesta di <b id="dk"></b>,<br>per un totale di <b id="de"></b>.</p>
+    <button class="link" id="again">Invia un'altra richiesta</button>
   </div>
 
   <footer>
@@ -282,8 +282,8 @@ $('f').addEventListener('submit', async e => {
     $('f').style.display='none'; document.querySelector('.welcome').style.display='none';
     $('done').style.display='block'; window.scrollTo({top:0,behavior:'smooth'});
     if(j.left != null){ AVAIL = j.left; $('availN').textContent = AVAIL + ' lt'; }
-  }catch(x){ err("Non siamo riusciti a inviare l'ordine. Riprova tra poco. ("+x.message+')'); }
-  finally{ btn.disabled=false; $('goT').textContent = "Compra l'olio"; }
+  }catch(x){ err("Non siamo riusciti a inviare la richiesta. Riprova tra poco. ("+x.message+')'); }
+  finally{ btn.disabled=false; $('goT').textContent = "Invia la richiesta"; }
 });
 
 $('again').onclick = () => {
