@@ -1,5 +1,5 @@
--- OliAmo: quantità sempre in LITRI. q3 = lattine da 3 lt, q5 = lattine da 5 lt.
-CREATE TABLE orders (id TEXT PRIMARY KEY, data TEXT NOT NULL, nome TEXT, cognome TEXT, telefono TEXT, q3 INTEGER DEFAULT 0, q5 INTEGER DEFAULT 0, litri INTEGER DEFAULT 0, euro REAL DEFAULT 0, note TEXT, pagato INTEGER DEFAULT 0, consegnato INTEGER DEFAULT 0, data_pag TEXT DEFAULT '', metodo TEXT DEFAULT '', per_il TEXT DEFAULT '', stato TEXT DEFAULT 'ok', consegnati INTEGER DEFAULT 0, eliminato TEXT DEFAULT '', mano INTEGER DEFAULT 0);
+-- OliAmo: quantità sempre in LITRI. pezzi = JSON dei formati richiesti (lattine e bottiglie); q3/q5 solo per gli ordini vecchi.
+CREATE TABLE orders (id TEXT PRIMARY KEY, data TEXT NOT NULL, nome TEXT, cognome TEXT, telefono TEXT, q3 INTEGER DEFAULT 0, q5 INTEGER DEFAULT 0, litri INTEGER DEFAULT 0, euro REAL DEFAULT 0, note TEXT, pagato INTEGER DEFAULT 0, consegnato INTEGER DEFAULT 0, data_pag TEXT DEFAULT '', metodo TEXT DEFAULT '', per_il TEXT DEFAULT '', stato TEXT DEFAULT 'ok', consegnati INTEGER DEFAULT 0, eliminato TEXT DEFAULT '', mano INTEGER DEFAULT 0, pezzi TEXT DEFAULT '');
 CREATE TABLE loads (id TEXT PRIMARY KEY, data TEXT NOT NULL, litri INTEGER NOT NULL, utente TEXT, note TEXT, ins TEXT);
 CREATE TABLE costs (id TEXT PRIMARY KEY, data TEXT NOT NULL, descr TEXT, euro REAL NOT NULL, utente TEXT, ins TEXT, qta REAL DEFAULT 0, unita TEXT DEFAULT '');
 CREATE TABLE users (tk TEXT PRIMARY KEY, nome TEXT NOT NULL, ruolo TEXT NOT NULL, creato TEXT);
