@@ -1,7 +1,8 @@
 /**
  * OliAmo – motore su Cloudflare (Pages Function + database D1)
  * Indirizzo: /api   (GET ?action=info|report|area, POST con JSON)
- * Quantità sempre in LITRI. Lattine da 3 lt (q3) e da 5 lt (q5); i prezzi si impostano dal report (impostazioni p3 / p5).
+ * Quantità sempre in LITRI. I formati (lattine e bottiglie, con litri e prezzo) si impostano dal report: impostazione 'formati'.
+ * Ogni ordine salva i suoi pezzi in orders.pezzi (JSON); q3/q5 restano per gli ordini vecchi.
  * Segreti da impostare in Cloudflare (Settings > Variables and Secrets):
  *   MASTER_KEY      = password iniziale del report (finché non la cambi dal report; poi vale quella cifrata nel database)
  *   TELEGRAM_TOKEN  = token del bot Telegram per gli avvisi (facoltativo)
@@ -13,7 +14,6 @@ const SATISPAY_PHONE = '+393931609967';
 const PAYPAL_ME = 'https://paypal.me/bartoccifrancesco';   // link PayPal.Me per i pagamenti
 const paypalLink = euro => PAYPAL_ME + '/' + (+euro || 0).toFixed(2) + 'EUR';
 const TZ = 'Europe/Rome';
-const L3 = 3, L5 = 5;    // litri delle due lattine
 const DEFAULT_MSG = "Al momento l'olio è finito. Appena ne abbiamo altro vi avviseremo. Grazie!";
 const NOPRICE_MSG = 'La vendita aprirà a breve: stiamo preparando i prezzi.';
 const TRASH_DAYS = 30;   // dopo quanti giorni il cestino si svuota da solo
@@ -37,8 +37,24 @@ const GIVEN = "(SELECT COALESCE(SUM(litri),0) FROM orders WHERE COALESCE(elimina
 const LOADED = '(SELECT COALESCE(SUM(litri),0) FROM loads)';
 const AV = `(${LOADED} - ${GIVEN})`;
 const all = async (db, sql, ...b) => (await db.prepare(sql).bind(...b).all()).results;
-const lt = n => (+n || 0) + ' lt';
-const lattTxt = (q3, q5) => [q3 ? q3 + (q3 === 1 ? ' lattina' : ' lattine') + ' da 3 lt' : '', q5 ? q5 + (q5 === 1 ? ' lattina' : ' lattine') + ' da 5 lt' : ''].filter(Boolean).join(' + ');
+const r2 = n => Math.round((+n || 0) * 100) / 100;
+const num = v => parseFloat(String(v == null ? '' : v).replace(',', '.')) || 0;
+const ltN = n => String(r2(n)).replace('.', ',');
+const lt = n => ltN(n) + ' lt';
+const TIPI = { lattina: ['lattina', 'lattine'], bottiglia: ['bottiglia', 'bottiglie'] };
+/** "2 lattine da 3 lt + 1 bottiglia da 0,5 lt" */
+const pzTxt = P => (P || []).filter(x => x.n > 0).map(x => x.n + ' ' + (TIPI[x.tipo] || TIPI.lattina)[x.n === 1 ? 0 : 1] + ' da ' + lt(x.lt)).join(' + ');
+const legacyPz = (q3, q5) => [q3 ? { tipo: 'lattina', lt: 3, n: q3 } : null, q5 ? { tipo: 'lattina', lt: 5, n: q5 } : null].filter(Boolean);
+const parsePz = r => { try { const P = JSON.parse(r.pezzi || 'null'); if (Array.isArray(P) && P.length) return P; } catch (e) {} return legacyPz(r.q3 || 0, r.q5 || 0); };
+
+/** La colonna orders.pezzi viene aggiunta da sola la prima volta (non tocca i dati che ci sono) */
+let colOk = false;
+async function ensure_(db) {
+  if (colOk) return;
+  try { await db.prepare('SELECT pezzi FROM orders LIMIT 1').all(); }
+  catch (e) { try { await db.prepare("ALTER TABLE orders ADD COLUMN pezzi TEXT DEFAULT ''").run(); } catch (e2) {} }
+  colOk = true;
+}
 const eurTxt = e => (+e || 0).toFixed(2).replace('.', ',') + ' €';
 
 /* ---------- dati ---------- */
@@ -50,7 +66,7 @@ const orders_ = async db => {
     const payments = pays[r.id] || [];
     return {
       id: r.id, data: r.data, nome: r.nome, cognome: r.cognome || '', telefono: r.telefono || '',
-      q3: r.q3 || 0, q5: r.q5 || 0, litri: r.litri, euro: r.euro, note: r.note || '',
+      q3: r.q3 || 0, q5: r.q5 || 0, pezzi: parsePz(r), litri: r.litri, euro: r.euro, note: r.note || '',
       pagato: !!r.pagato, consegnato: !!r.consegnato, dataPag: r.data_pag || '', metodo: r.metodo || '', perIl: r.per_il || '',
       stato: r.stato || 'ok', eliminato: r.eliminato || '', mano: !!r.mano,
       payments, paid: Math.round(payments.reduce((t, p) => t + p.euro, 0) * 100) / 100,
@@ -69,14 +85,36 @@ async function userByToken(db, tk) {
 }
 async function available_(db) {
   const r = await db.prepare(`SELECT ${AV} AS n`).first();
-  return Math.max(0, r.n || 0);
+  return Math.max(0, r2(r.n || 0));
 }
 const price_ = v => { const n = Math.round((parseFloat(String(v == null ? '' : v).replace(',', '.')) || 0) * 100) / 100; return n > 0 && n < 10000 ? n : 0; };
+/** Formati in vendita: [{ id, tipo: 'lattina'|'bottiglia', lt, prezzo, on }], in ordine di litri */
+const fmtClean = L => (Array.isArray(L) ? L : []).slice(0, 12).map(f => ({
+  id: String(f.id || '').replace(/[^a-z0-9]/gi, '').slice(0, 12) || newId('f'),
+  tipo: f.tipo === 'bottiglia' ? 'bottiglia' : 'lattina',
+  lt: r2(num(f.lt)), prezzo: price_(f.prezzo), on: f.on !== false && f.on !== 0 && f.on !== '0'
+})).filter(f => f.lt > 0 && f.lt <= 100).sort((a, b) => a.lt - b.lt || (a.tipo === 'bottiglia' ? -1 : 1));
 async function settings_(db) {
-  const s = {}; (await all(db, "SELECT k, v FROM settings WHERE k IN ('open','msg','p3','p5')")).forEach(r => s[r.k] = r.v);
-  return { open: s.open !== '0', msg: s.msg || '', p3: price_(s.p3), p5: price_(s.p5) };
+  const s = {}; (await all(db, "SELECT k, v FROM settings WHERE k IN ('open','msg','p3','p5','formati')")).forEach(r => s[r.k] = r.v);
+  let formati;
+  try { formati = s.formati ? fmtClean(JSON.parse(s.formati)) : null; } catch (e) { formati = null; }
+  if (!formati) formati = fmtClean([{ id: 'l3', tipo: 'lattina', lt: 3, prezzo: s.p3, on: true }, { id: 'l5', tipo: 'lattina', lt: 5, prezzo: s.p5, on: true }]);
+  const priced = formati.some(f => f.on && f.prezzo > 0);
+  return { open: s.open !== '0', msg: s.msg || '', formati, priced, p3: price_(s.p3), p5: price_(s.p5) };
 }
-const priceOf = (s, q3, q5) => Math.round((q3 * s.p3 + q5 * s.p5) * 100) / 100;
+/** Pezzi richiesti (d.pezzi = { idFormato: quantità }); per le pagine vecchie anche d.q3 / d.q5 */
+function pick_(s, d, soloInVendita, max) {
+  const F = s.formati.filter(f => !soloInVendita || (f.on && f.prezzo > 0));
+  let req = d.pezzi && typeof d.pezzi === 'object' ? d.pezzi : null;
+  if (!req) {
+    req = {};
+    const f3 = F.find(f => f.tipo === 'lattina' && f.lt === 3), f5 = F.find(f => f.tipo === 'lattina' && f.lt === 5);
+    if (f3) req[f3.id] = d.q3; if (f5) req[f5.id] = d.q5;
+  }
+  const P = F.map(f => ({ id: f.id, tipo: f.tipo, lt: f.lt, p: f.prezzo, n: Math.max(0, Math.min(max, parseInt(req[f.id], 10) || 0)) })).filter(x => x.n > 0);
+  const cnt = l => P.filter(x => x.tipo === 'lattina' && x.lt === l).reduce((t, x) => t + x.n, 0);
+  return { P, litri: r2(P.reduce((t, x) => t + x.lt * x.n, 0)), euro: r2(P.reduce((t, x) => t + x.p * x.n, 0)), q3: cnt(3), q5: cnt(5) };
+}
 
 /* ---------- avvisi (Telegram) ---------- */
 
@@ -319,11 +357,13 @@ async function tgLink_(db, env) {
 
 export async function onRequestGet({ request, env, waitUntil }) {
   const db = env.DB, p = Object.fromEntries(new URL(request.url).searchParams);
+  await ensure_(db);
   waitUntil(tidy_(db).catch(() => {}));
   if (p.action === 'info') {
-    const s = await settings_(db), left = await available_(db), priced = s.p3 > 0 && s.p5 > 0;
+    const s = await settings_(db), left = await available_(db), priced = s.priced;
+    const formati = s.formati.filter(f => f.on && f.prezzo > 0).map(({ id, tipo, lt, prezzo }) => ({ id, tipo, lt, prezzo }));
     return json({ ok: true, open: s.open && priced && left > 0, closedByHand: !s.open || !priced, available: left,
-      msg: !priced ? NOPRICE_MSG : (s.msg || DEFAULT_MSG), p3: s.p3, p5: s.p5, minData: addDays(today_(), 1) });
+      msg: !priced ? NOPRICE_MSG : (s.msg || DEFAULT_MSG), formati, p3: s.p3, p5: s.p5, minData: addDays(today_(), 1) });
   }
   if (p.action === 'report') {
     if (!await isMaster(db, request, null)) return json({ ok: false, auth: true, error: 'Accesso scaduto: entra di nuovo' });
@@ -334,7 +374,7 @@ export async function onRequestGet({ request, env, waitUntil }) {
     const u = await userByToken(db, p.t);
     if (!u) return json({ ok: false, error: 'Link non valido. Chiedi un nuovo link a chi gestisce OliAmo.' });
     const s = await settings_(db);
-    const out = { ok: true, nome: u.nome, ruolo: u.ruolo, available: await available_(db), p3: s.p3, p5: s.p5 };
+    const out = { ok: true, nome: u.nome, ruolo: u.ruolo, available: await available_(db), formati: s.formati, p3: s.p3, p5: s.p5 };
     const loads = await loads_(db);
     if (u.ruolo === 'intermedio') {
       out.loads = loads; out.costs = await costs_(db);
@@ -354,6 +394,7 @@ export async function onRequestGet({ request, env, waitUntil }) {
 export async function onRequestPost({ request, env, waitUntil }) {
   const db = env.DB;
   try {
+    await ensure_(db);
     const d = JSON.parse(await request.text() || '{}');
     if (!d.action) return await order_(db, env, d);
     if (d.action === 'login') return await login_(db, env, request, d);
@@ -407,33 +448,30 @@ async function order_(db, env, d) {
     if (prev) return json(JSON.parse(prev.res));
   }
   const s = await settings_(db), left = await available_(db);
-  if (!(s.p3 > 0 && s.p5 > 0)) return json({ ok: false, closed: true, error: NOPRICE_MSG });
+  if (!s.priced) return json({ ok: false, closed: true, error: NOPRICE_MSG });
   if (!s.open || left <= 0) return json({ ok: false, closed: true, error: s.msg || DEFAULT_MSG });
 
   const nome = clean(d.nome, 60), cognome = clean(d.cognome, 60);
   if (!nome || !cognome) return json({ ok: false, error: 'Nome e cognome obbligatori' });
-  const q3 = Math.max(0, Math.min(50, parseInt(d.q3, 10) || 0));
-  const q5 = Math.max(0, Math.min(50, parseInt(d.q5, 10) || 0));
-  const litri = q3 * L3 + q5 * L5;
-  if (!litri) return json({ ok: false, error: 'Scegli almeno una lattina' });
+  const { P, litri, euro, q3, q5 } = pick_(s, d, true, 50);
+  if (!litri) return json({ ok: false, error: 'Scegli almeno una lattina o una bottiglia' });
   if (litri > left) return json({ ok: false, error: 'Sono rimasti solo ' + lt(left) + ' di olio disponibili.' });
-  const euro = priceOf(s, q3, q5);
   const perIl = '';
   const telefono = clean(d.telefono, 30), note = clean(d.note, 500);
 
   // inserisce solo se l'olio basta ancora (evita di prenotare due volte lo stesso)
-  const r = await db.prepare(`INSERT INTO orders (id, data, nome, cognome, telefono, q3, q5, litri, euro, note, per_il)
-    SELECT ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?
+  const r = await db.prepare(`INSERT INTO orders (id, data, nome, cognome, telefono, q3, q5, pezzi, litri, euro, note, per_il)
+    SELECT ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?
     WHERE ${AV} >= ?`)
-    .bind(newId('p'), now_(), nome, cognome, telefono, q3, q5, litri, euro, note, perIl, litri).run();
+    .bind(newId('p'), now_(), nome, cognome, telefono, q3, q5, JSON.stringify(P), litri, euro, note, perIl, litri).run();
   if (!r.meta.changes) {
     const l2 = await available_(db);
     return json({ ok: false, error: l2 > 0 ? 'Sono rimasti solo ' + lt(l2) + ' di olio disponibili.' : (s.msg || DEFAULT_MSG), closed: l2 <= 0 });
   }
-  const res = { ok: true, litri, q3, q5, euro, left: Math.max(0, left - litri), satispay: SATISPAY_PHONE, paypal: paypalLink(euro), perIl };
+  const res = { ok: true, litri, q3, q5, pezzi: P, testo: pzTxt(P), euro, left: Math.max(0, r2(left - litri)), satispay: SATISPAY_PHONE, paypal: paypalLink(euro), perIl };
   if (rid) await db.prepare('INSERT OR REPLACE INTO idem (rid, res, ts) VALUES (?, ?, ?)').bind(rid, JSON.stringify(res), Date.now()).run();
 
-  await telegram(env, db, '🫒 OliAmo – nuovo ordine\n' + nome + ' ' + cognome + ': ' + lattTxt(q3, q5) + ' (' + lt(litri) + ')' +
+  await telegram(env, db, '🫒 OliAmo – nuovo ordine\n' + nome + ' ' + cognome + ': ' + pzTxt(P) + ' (' + lt(litri) + ')' +
     ' · ' + eurTxt(euro) +
     (telefono ? '\nTel: ' + telefono : '') +
     (note ? '\nNote: ' + note : '') +
@@ -444,7 +482,7 @@ async function order_(db, env, d) {
 
 /** Carico di olio (litri). Il master può anche togliere (numero negativo) */
 async function addLoad_(db, d, u) {
-  const n = parseInt(d.litri, 10) || 0;
+  const n = r2(num(d.litri));
   if (!n || (n < 0 && u.ruolo !== 'master')) return json({ ok: false, error: 'Numero di litri non valido' });
   if (Math.abs(n) > 20000) return json({ ok: false, error: 'Numero troppo grande' });
   const data = isDate(d.data) ? d.data : today_(), note = clean(d.note, 200);
@@ -456,17 +494,16 @@ async function addLoad_(db, d, u) {
 async function handOrder_(db, d, u) {
   const nome = clean(d.nome, 60);
   if (!nome) return json({ ok: false, error: "Scrivi a chi hai dato l'olio" });
-  let q3 = Math.max(0, Math.min(200, parseInt(d.q3, 10) || 0)), q5 = Math.max(0, Math.min(200, parseInt(d.q5, 10) || 0));
-  const litri = q3 * L3 + q5 * L5;
-  if (!litri) return json({ ok: false, error: 'Scegli quante lattine' });
   const s = await settings_(db);
-  const euro = d.euro === '' || d.euro == null ? priceOf(s, q3, q5) : Math.round((parseFloat(String(d.euro).replace(',', '.')) || 0) * 100) / 100;
+  const { P, litri, euro: auto, q3, q5 } = pick_(s, d, false, 200);
+  if (!litri) return json({ ok: false, error: 'Scegli quante lattine o bottiglie' });
+  const euro = d.euro === '' || d.euro == null ? auto : r2(num(d.euro));
   if (!(euro >= 0) || euro > 100000) return json({ ok: false, error: 'Importo non valido' });
   const metodo = ['contanti', 'satispay', 'paypal'].includes(d.metodo) ? d.metodo : '';
   const day = isDate(d.data) ? d.data : today_(), id = newId('p');
-  const r = await db.prepare(`INSERT INTO orders (id, data, nome, cognome, telefono, q3, q5, litri, euro, note, per_il, mano)
-    SELECT ?, ?, ?, '', ?, ?, ?, ?, ?, ?, '', 1 WHERE ${d.force ? '1' : AV + ' >= ?'}`)
-    .bind(...[id, day + now_().slice(10), nome, clean(d.telefono, 30), q3, q5, litri, euro, clean(d.note, 500)].concat(d.force ? [] : [litri])).run();
+  const r = await db.prepare(`INSERT INTO orders (id, data, nome, cognome, telefono, q3, q5, pezzi, litri, euro, note, per_il, mano)
+    SELECT ?, ?, ?, '', ?, ?, ?, ?, ?, ?, ?, '', 1 WHERE ${d.force ? '1' : AV + ' >= ?'}`)
+    .bind(...[id, day + now_().slice(10), nome, clean(d.telefono, 30), q3, q5, JSON.stringify(P), litri, euro, clean(d.note, 500)].concat(d.force ? [] : [litri])).run();
   if (!r.meta.changes) { const av = await available_(db); return json({ ok: false, short: true, need: litri, available: av, error: 'Ci sono solo ' + lt(av) + ' di olio disponibili.' }); }
   await addMove_(db, id, day, litri, metodo ? euro : 0, metodo, u);
   await sync_(db, id);
@@ -506,13 +543,13 @@ async function sync_(db, id) {
   const met = [...new Set(M.map(p => p.metodo || ''))];
   await db.prepare('UPDATE orders SET pagato = ?, data_pag = ?, metodo = ?, consegnati = ?, consegnato = ? WHERE id = ?')
     .bind(paid >= o.euro - 0.005 ? 1 : 0, M.length ? M[M.length - 1].data : '', met.length === 1 ? met[0] : met.length ? 'misto' : '',
-      Math.min(dl, o.litri), dl >= o.litri ? 1 : 0, id).run();
+      Math.min(r2(dl), o.litri), dl >= o.litri - 0.001 ? 1 : 0, id).run();
 }
 /** Quanto manca da avere e quanti litri da dare */
 const remaining_ = async (db, id) => {
   const r = await db.prepare(`SELECT euro - COALESCE((SELECT SUM(euro) FROM payments WHERE order_id = orders.id), 0) AS e,
     litri - COALESCE((SELECT SUM(litri) FROM payments WHERE order_id = orders.id), 0) AS u FROM orders WHERE id = ?`).bind(id).first();
-  return r ? { e: Math.max(0, Math.round(r.e * 100) / 100), u: Math.max(0, r.u) } : null;
+  return r ? { e: Math.max(0, Math.round(r.e * 100) / 100), u: Math.max(0, r2(r.u)) } : null;
 };
 const addMove_ = (db, id, data, litri, euro, metodo, u) => db.prepare('INSERT INTO payments (id, order_id, data, euro, litri, metodo, utente, ins) VALUES (?, ?, ?, ?, ?, ?, ?, ?)')
   .bind(newId('m'), id, data, euro, litri, euro > 0 ? (['satispay', 'paypal'].includes(metodo) ? metodo : 'contanti') : '', u.nome, now_()).run();
@@ -542,10 +579,10 @@ async function flag_(db, d, u) {
 async function move_(db, d, u) {
   const id = String(d.id || ''), rest = await remaining_(db, id);
   if (!rest) return json({ ok: false, error: 'Prenotazione non trovata' });
-  const n = Math.max(0, parseInt(d.litri, 10) || 0);
+  const n = Math.max(0, r2(num(d.litri)));
   const e = Math.round((parseFloat(String(d.euro == null ? '' : d.euro).replace(',', '.')) || 0) * 100) / 100;
   if (!n && !(e > 0)) return json({ ok: false, error: "Scrivi i litri consegnati o l'importo pagato" });
-  if (n > rest.u) return json({ ok: false, error: rest.u ? 'Restano da dare solo ' + lt(rest.u) : "L'olio è già tutto consegnato" });
+  if (n > rest.u + 0.001) return json({ ok: false, error: rest.u ? 'Restano da dare solo ' + lt(rest.u) : "L'olio è già tutto consegnato" });
   if (e < 0 || e > rest.e + 0.005) return json({ ok: false, error: rest.e > 0 ? 'Restano da avere solo ' + eurTxt(rest.e) : 'È già tutto pagato' });
   if (e > 0 && !['contanti', 'satispay', 'paypal'].includes(d.metodo)) return json({ ok: false, error: 'Scegli Contanti, Satispay o PayPal' });
   await addMove_(db, id, isDate(d.data) ? d.data : today_(), n, e, d.metodo, u);
@@ -583,7 +620,7 @@ async function purge_(db, where, ...b) {
   return ids.length;
 }
 
-/** Impostazioni: aperto/chiuso, messaggio, prezzi delle lattine (p3, p5) */
+/** Impostazioni: aperto/chiuso, messaggio, formati (lattine e bottiglie con litri e prezzo) */
 async function saveSettings_(db, d) {
   const st = [], put = (k, v) => st.push(db.prepare('INSERT OR REPLACE INTO settings (k, v) VALUES (?, ?)').bind(k, v));
   if ('open' in d) put('open', d.open ? '1' : '0');
@@ -592,6 +629,16 @@ async function saveSettings_(db, d) {
     const v = price_(d[k]);
     if (!v && String(d[k]).trim() !== '') return json({ ok: false, error: 'Prezzo non valido per la lattina da ' + (k === 'p3' ? 3 : 5) + ' lt' });
     put(k, v ? String(v) : '');
+  }
+  if ('formati' in d) {
+    const L = Array.isArray(d.formati) ? d.formati : [];
+    for (const f of L) {
+      const nome = (f.tipo === 'bottiglia' ? 'Bottiglia' : 'Lattina') + (num(f.lt) > 0 ? ' da ' + lt(num(f.lt)) : '');
+      if (!(num(f.lt) > 0 && num(f.lt) <= 100)) return json({ ok: false, error: nome + ': scrivi quanti litri (es. 0,5 – 1 – 3 – 5)' });
+      if (String(f.prezzo == null ? '' : f.prezzo).trim() !== '' && !price_(f.prezzo)) return json({ ok: false, error: nome + ': prezzo non valido' });
+    }
+    if (L.length > 12) return json({ ok: false, error: 'Al massimo 12 formati' });
+    put('formati', JSON.stringify(fmtClean(L)));
   }
   if (st.length) await db.batch(st);
   return json({ ok: true, settings: await settings_(db) });
