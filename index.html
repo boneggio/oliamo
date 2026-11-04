@@ -264,7 +264,7 @@ async function loadInfo(){
     AVAIL = j.open ? j.available : 0;
     if(!j.open){
       $('avail').hidden = true; $('f').hidden = true; $('closed').hidden = false;
-      $('closedT').textContent = j.closedByHand ? 'Vendita chiusa' : 'Olio finito';
+      $('closedT').textContent = j.riservato ? 'Pagina riservata' : j.closedByHand ? 'Vendita chiusa' : 'Olio finito';
       $('closedMsg').textContent = j.msg || "Al momento l'olio è finito. Appena ne abbiamo altro vi avviseremo. Grazie!";
       return;
     }
