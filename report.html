@@ -4,23 +4,23 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="robots" content="noindex">
-<meta name="theme-color" content="#55621f">
+<meta name="theme-color" content="#3D7A0E">
 <title>OliAmo – Report</title>
 <link rel="icon" href="logo.svg" type="image/svg+xml">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;9..144,800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
 <style>
-:root{--bg:#f6f3e6;--card:#fffdf5;--ink:#2a2a17;--muted:#5a5838;--line:#e2dcc2;--brand:#55621f;--brand-2:#687823;--yolk:#d4a72c;--err:#a8322a}
-@media (prefers-color-scheme:dark){:root{--bg:#15160d;--card:#1e2013;--ink:#efeedd;--muted:#b8b596;--line:#343620;--brand:#b9c76c;--brand-2:#cdd98a;--yolk:#e8c35a;--err:#f08a80}}
+:root{--bg:#FFFBEA;--card:#FFFFFF;--ink:#24300E;--muted:#5B6431;--line:#EDE3BF;--brand:#3D7A0E;--brand-2:#5C9E1A;--yolk:#FFC21A;--err:#B83A1E}
+@media (prefers-color-scheme:dark){:root{--bg:#141808;--card:#1E2410;--ink:#F4F6E4;--muted:#C2C79A;--line:#343A1C;--brand:#A8D65A;--brand-2:#C3E57E;--yolk:#FFD24D;--err:#FF9A80}}
 *{box-sizing:border-box}
 [hidden]{display:none!important}
 body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.5 Inter,system-ui,sans-serif}
-.top{background:linear-gradient(180deg,#e9c46a 0%,#f1dca0 45%,#a5ae63 46%,#6f7d36 100%);padding:16px 16px 34px;border-radius:0 0 50% 50%/0 0 24px 24px}
+.top{background:linear-gradient(180deg,#FFD45C 0%,#FFE59A 45%,#8CC63F 46%,#3D7A0E 100%);padding:16px 16px 34px;border-radius:0 0 50% 50%/0 0 24px 24px}
 .top .in{max-width:1000px;margin:0 auto;display:flex;align-items:center;gap:12px}
 .top img{width:56px;filter:drop-shadow(0 4px 8px rgba(60,50,10,.3))}
-h1{font-family:Fraunces,Georgia,serif;font-weight:800;color:#fff;margin:0;font-size:1.6rem;line-height:1.1;text-shadow:0 2px 10px rgba(60,50,10,.65);flex:1}
+h1{font-family:Fraunces,Georgia,serif;font-weight:900;color:#24300E;margin:0;font-size:1.6rem;line-height:1.1;flex:1}
 .top .act{display:flex;gap:6px}
-.top .act button{border:0;background:rgba(255,255,255,.9);color:#4a551b;border-radius:99px;padding:10px 14px;font:600 .82rem Inter,sans-serif;cursor:pointer}
+.top .act button{border:0;background:rgba(255,255,255,.9);color:#3D7A0E;border-radius:99px;padding:10px 14px;font:600 .82rem Inter,sans-serif;cursor:pointer}
 .wrap{max-width:1000px;margin:-18px auto 0;padding:0 16px 48px;display:grid;gap:14px}
 .wrap>*,#app>*{min-width:0}
 .card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:16px;box-shadow:0 12px 34px -26px rgba(60,55,10,.5)}
@@ -30,7 +30,7 @@ input,select,textarea{width:100%;padding:9px 11px;border:1px solid var(--line);b
 input:focus,select:focus,textarea:focus{outline:2px solid var(--yolk);outline-offset:1px;border-color:transparent}
 input[type=checkbox]{width:18px;height:18px;padding:0;accent-color:var(--brand-2)}
 .btn{padding:9px 14px;border:0;border-radius:10px;background:var(--brand);color:#fff;font:600 .9rem Inter,sans-serif;cursor:pointer;white-space:nowrap}
-@media (prefers-color-scheme:dark){.btn{color:#1b1f0a}}
+@media (prefers-color-scheme:dark){.btn{color:#141808}}
 .btn.ghost{background:transparent;color:var(--brand);border:1px solid var(--line)}
 .btn.red{background:transparent;color:var(--err);border:1px solid color-mix(in srgb,var(--err) 40%,transparent)}
 .btn:disabled{opacity:.5}
@@ -57,7 +57,7 @@ input[type=checkbox]{width:18px;height:18px;padding:0;accent-color:var(--brand-2
 .kpis{display:grid;grid-template-columns:repeat(6,1fr);gap:10px}
 @media (max-width:1100px){.kpis{grid-template-columns:repeat(4,1fr)}}
 .stockw{margin-bottom:14px;max-width:640px}
-.kpi.hl .sub{color:inherit;opacity:.85}
+.kpi.hl .sub{color:#fff;opacity:1}
 details.pren{border:2px solid var(--brand-2);border-radius:16px;overflow:hidden}
 .pbox{border:2px solid var(--brand-2);border-radius:16px;padding:14px 18px;margin-bottom:14px;background:color-mix(in srgb,var(--yolk) 28%,var(--card))}
 .pbox h2{margin:0 0 10px;font-size:1.25rem}
@@ -81,11 +81,12 @@ details.pren>.in{padding:14px}
 .kpi{padding:12px}
 .kpi small{display:block;color:var(--muted);font-size:.75rem}
 .kpi b{font-family:Fraunces,Georgia,serif;font-size:1.45rem;line-height:1.15;font-variant-numeric:tabular-nums}
-.kpi.hl{background:var(--brand);border-color:transparent;color:#fff}.kpi.hl small{color:#eef0d2}
-@media (prefers-color-scheme:dark){.kpi.hl{color:#1b1f0a}.kpi.hl small{color:#3a4214}}
+.kpi.hl{background:var(--brand);border-color:transparent;color:#fff}.kpi.hl small{color:#fff}
+@media (prefers-color-scheme:dark){.kpi.hl{color:#141808}.kpi.hl small{color:#3a4214}}
 .neg{color:var(--err)}
 .set{display:grid;grid-template-columns:auto 1fr auto;gap:12px;align-items:center}
-.prices{display:flex;flex-wrap:wrap;gap:10px;align-items:end;margin-top:12px}.prices>div{width:150px}.prices .hint{flex:1 1 200px;margin:0}
+.pricec{border:2px solid var(--yolk)}
+.prices{display:flex;flex-wrap:wrap;gap:10px;align-items:end}.prices>div{width:150px}.prices .hint{flex:1 1 200px;margin:0}
 @media (max-width:640px){.set{grid-template-columns:1fr}}
 .sw{display:flex;align-items:center;gap:10px;font-weight:600;cursor:pointer;user-select:none}
 .sw input{position:absolute;opacity:0;width:1px;height:1px}
@@ -104,7 +105,7 @@ details.pren>.in{padding:14px}
 .seg{display:inline-flex;border:1px solid var(--line);border-radius:10px;overflow:hidden}
 .seg button{border:0;background:transparent;color:var(--ink);padding:7px 11px;font:500 .85rem Inter,sans-serif;cursor:pointer}
 .seg button.on{background:var(--brand);color:#fff}
-@media (prefers-color-scheme:dark){.seg button.on{color:#1b1f0a}}
+@media (prefers-color-scheme:dark){.seg button.on{color:#141808}}
 .tw{overflow-x:auto}
 table{width:100%;border-collapse:collapse;font-size:.9rem}
 th,td{padding:8px 8px;border-bottom:1px solid var(--line);text-align:left;vertical-align:middle}
@@ -215,33 +216,39 @@ tr.rej td{opacity:.5}tr.rej b{text-decoration:line-through}
   <div id="app" hidden style="display:grid;gap:14px">
     <div class="kpis" id="kpis"></div>
 
-    <section class="card" data-fold="impostazioni">
-      <h2>⚙️ Impostazioni sito e avvisi Telegram</h2>
-      <div class="set">
-        <label class="sw"><input type="checkbox" id="open"><i></i><span id="openL">Prenotazioni aperte</span></label>
-        <input id="msg" maxlength="300" placeholder="Messaggio quando l'olio è finito o le prenotazioni chiuse">
-        <button class="btn" id="saveSet">Salva</button>
-      </div>
-      <p class="hint" id="setHint"></p>
+    <section class="card pricec" data-fold="prezzi" data-fold-open>
+      <h2>💶 Prezzi delle lattine</h2>
       <div class="prices">
         <div><label for="p3">Lattina da 3 lt (€)</label><input id="p3" inputmode="decimal" placeholder="es. 30,00"></div>
         <div><label for="p5">Lattina da 5 lt (€)</label><input id="p5" inputmode="decimal" placeholder="es. 48,00"></div>
         <button class="btn" id="savePr">Salva i prezzi</button>
         <p class="hint" id="prHint"></p>
       </div>
-      <div class="set" style="margin-top:12px">
-        <span>🔔 <b>Avvisi Telegram</b></span>
+    </section>
+
+    <section class="card" data-fold="vendita">
+      <h2>🛒 Vendita sul sito</h2>
+      <div class="set">
+        <label class="sw"><input type="checkbox" id="open"><i></i><span id="openL">Vendita aperta</span></label>
+        <input id="msg" maxlength="300" placeholder="Messaggio quando l'olio è finito o la vendita è chiusa">
+        <button class="btn" id="saveSet">Salva</button>
+      </div>
+      <p class="hint" id="setHint"></p>
+    </section>
+
+    <section class="card" data-fold="telegram">
+      <h2>🔔 Avvisi Telegram</h2>
+      <div class="set" style="grid-template-columns:auto auto 1fr">
         <button class="btn ghost" id="tgLink">Collega l'ultima chat</button>
         <button class="btn ghost" id="tgTest">Messaggio di prova</button>
       </div>
-      <p class="hint">Per cambiare chat o usare un gruppo: aggiungi @oliamo_bot al gruppo, scrivi <b>/start@oliamo_bot</b> nel gruppo, poi premi "Collega l'ultima chat".</p>
+      <p class="hint">Gli avvisi arrivano da @oliamo_bot. Per cambiare chat o usare un gruppo: aggiungi @oliamo_bot al gruppo, scrivi <b>/start@oliamo_bot</b> nel gruppo, poi premi "Collega l'ultima chat".</p>
     </section>
 
 
     <section class="card">
       <nav class="tabs" id="tabs">
-        <button data-t="pren" class="on">Prenotazioni<span class="c" id="cPren">0</span></button>
-        <button data-t="cal">Calendario<span class="c" id="cCal">0</span></button>
+        <button data-t="pren" class="on">Ordini<span class="c" id="cPren">0</span></button>
         <button data-t="car">Olio caricato<span class="c" id="cCar">0</span></button>
         <button data-t="cos">Costi<span class="c" id="cCos">0</span></button>
         <button data-t="ute">Utenti<span class="c" id="cUte">0</span></button>
@@ -252,9 +259,9 @@ tr.rej td{opacity:.5}tr.rej b{text-decoration:line-through}
       <!-- PRENOTAZIONI -->
       <div data-p="pren">
         <div class="stockw" id="stockBox"></div>
-        <div class="pbox" id="prenBox"><h2>🧺 Prenotazioni</h2><span class="pb" id="obadge"></span></div>
+        <div class="pbox" id="prenBox"><h2>🧺 Ordini</h2><span class="pb" id="obadge"></span></div>
         <div class="plist" id="prenList" hidden>
-        <div class="olh"><h2 id="plTitle">Prenotazioni</h2><button type="button" class="olx" id="plClose" aria-label="Chiudi l'elenco">✕</button></div>
+        <div class="olh"><h2 id="plTitle">Ordini</h2><button type="button" class="olx" id="plClose" aria-label="Chiudi l'elenco">✕</button></div>
         <div class="bar">
           <div class="seg" id="pf"><button data-f="" class="on">Tutte</button><button data-f="np">Da avere</button><button data-f="nc">Da dare</button></div>
           <select id="py" aria-label="Anno"></select>
@@ -276,19 +283,11 @@ tr.rej td{opacity:.5}tr.rej b{text-decoration:line-through}
         </table></div>
         <details class="trash" id="trashBox">
           <summary>🗑️ Cestino <span id="trN"></span></summary>
-          <p class="hint">Le prenotazioni eliminate restano qui per 30 giorni, poi spariscono da sole. L'olio di una prenotazione nel cestino torna disponibile.</p>
+          <p class="hint">Gli ordini eliminati restano qui per 30 giorni, poi spariscono da soli. L'olio di un ordine nel cestino torna disponibile.</p>
           <div class="tw"><table><thead><tr><th>Nome</th><th class="n">Olio</th><th class="n">€</th></tr></thead><tbody id="trb"></tbody></table></div>
         </details>
         </div>
         <div class="stockw" id="manoBox" style="margin-top:14px"></div>
-      </div>
-
-      <!-- CALENDARIO -->
-      <div data-p="cal" hidden>
-        <div class="calh"><button class="nav" id="calPrev" aria-label="Mese precedente">‹</button><b id="calT"></b><button class="nav" id="calNext" aria-label="Mese successivo">›</button><button class="btn ghost" id="calToday" style="margin-left:auto">Oggi</button></div>
-        <div class="sum" id="calSum"></div>
-        <div class="cal" id="cal"></div>
-        <div class="cald" id="calD"></div>
       </div>
 
       <!-- CARICHI -->
@@ -319,7 +318,7 @@ tr.rej td{opacity:.5}tr.rej b{text-decoration:line-through}
       <div data-p="ute" hidden>
         <form class="form" id="fu" style="grid-template-columns:2fr 2fr auto auto">
           <div><label for="un">Nome</label><input id="un" maxlength="60" placeholder="Es. Giulia"></div>
-          <div><label for="ur">Cosa può fare</label><select id="ur"><option value="caricatore">Carica solo l'olio</option><option value="intermedio">Olio + prenotazioni + costi + grafico</option></select></div>
+          <div><label for="ur">Cosa può fare</label><select id="ur"><option value="caricatore">Carica solo l'olio</option><option value="intermedio">Olio + ordini + costi + grafico</option></select></div>
           <button class="btn" id="usave">Aggiungi</button>
           <button class="btn ghost" type="button" id="ucancel" hidden>Annulla</button>
         </form>
@@ -442,18 +441,18 @@ function render(){
   ].map(([l,v,c,x])=>`<div class="card kpi ${c||''}"><small>${l}</small><b>${v}</b>${x||''}</div>`).join('');
 
   $('open').checked = D.settings.open; $('msg').value = D.settings.msg || '';
-  $('openL').textContent = D.settings.open ? 'Prenotazioni aperte' : 'Prenotazioni chiuse';
+  $('openL').textContent = D.settings.open ? 'Vendita aperta' : 'Vendita chiusa';
   const priced = D.settings.p3 > 0 && D.settings.p5 > 0;
-  $('setHint').textContent = !priced ? '⚠️ Prima imposta i prezzi delle lattine qui sotto: finché mancano, il sito non accetta prenotazioni.'
+  $('setHint').textContent = !priced ? '⚠️ Prima imposta i prezzi delle lattine qui sopra: finché mancano, il sito non vende.'
     : !D.settings.open ? 'La pagina mostra il messaggio di chiusura.'
-    : D.available > 0 ? `La pagina accetta prenotazioni "subito" fino a ${D.available} lt; poi solo "per una data".`
-    : 'Olio finito: sul sito si può solo prenotare per una data, finché qualcuno non carica altro olio.';
+    : D.available > 0 ? `Il sito vende fino a ${D.available} lt; poi si chiude da solo.`
+    : 'Olio finito: il sito mostra il messaggio finché qualcuno non carica altro olio.';
   if (document.activeElement !== $('p3')) $('p3').value = D.settings.p3 ? String(D.settings.p3).replace('.',',') : '';
   if (document.activeElement !== $('p5')) $('p5').value = D.settings.p5 ? String(D.settings.p5).replace('.',',') : '';
   $('prHint').textContent = priced ? `Al litro: 3 lt ${eur(D.settings.p3/3)} · 5 lt ${eur(D.settings.p5/5)}` : 'Prezzi non ancora impostati.';
 
   $('cPren').textContent = O.length; $('cCar').textContent = D.loads.length; $('cCos').textContent = D.costs.length; $('cUte').textContent = D.users.length;
-  renderOrders(); renderTrash(); renderCal(); renderLoads(); renderCosts(); renderUsers();
+  renderOrders(); renderTrash(); renderLoads(); renderCosts(); renderUsers();
   const cd = { sales: D.sales||[], costs:D.costs, loads:D.loads };
   if (chart) chart.update(cd); else chart = OliChart($('chart'), cd);
 }
@@ -480,7 +479,7 @@ function renderOrders(){
   { const aperte = D.orders.filter(o=>!OliOrd.done(o)).length,
       dc = D.orders.reduce((t,o)=>t+OliOrd.left(o),0), di = D.orders.reduce((t,o)=>t+OliOrd.rest(o),0);
     $('obadge').innerHTML = [`<span data-go="">📋 Tutte</span>`, aperte ? `<span data-go="ap">${aperte} ${aperte===1?'aperto':'aperti'}</span>` : '<span>Tutto in ordine ✓</span>', dc ? `<span data-go="nc">🫒 ${dc} lt da dare</span>` : '', di > 0.005 ? `<span data-go="np">💶 ${eur(di)} da avere</span>` : ''].join(''); }
-  document.querySelectorAll('#obadge [data-go]').forEach(x => x.classList.toggle('on', !$('prenList').hidden && x.dataset.go === pf)); $('plTitle').textContent = PTIT[pf] || 'Prenotazioni';
+  document.querySelectorAll('#obadge [data-go]').forEach(x => x.classList.toggle('on', !$('prenList').hidden && x.dataset.go === pf)); $('plTitle').textContent = PTIT[pf] || 'Ordini';
   $('ptb').innerHTML = V.map(o=>`<tr class="${OliOrd.done(o)?'done':''}">
     <td class="c"><input type="checkbox" data-sel="${esc(o.id)}" ${sel.has(o.id)?'checked':''} aria-label="Seleziona"></td>
     <td class="d">${dIt(o.data)}${o.perIl?`<div class="peril">per ${dShort(o.perIl)}</div>`:''}</td>
@@ -490,40 +489,12 @@ function renderOrders(){
     <td class="n">${eur(o.euro)}</td>
     <td class="c"><span class="pay2 ${o.pagato&&!o.metodo?'old':''}" title="${o.pagato?(o.metodo==='satispay'?'Pagato con Satispay':o.metodo==='paypal'?'Pagato con PayPal':o.metodo==='contanti'?'Pagato in contanti':'Pagato'):'Da avere'}">${o.pagato&&!o.metodo?'<b class="okm">✓</b>':''}<button data-pay="contanti" data-id="${esc(o.id)}" class="${o.pagato&&o.metodo==='contanti'?'on':''}" aria-label="Pagato in contanti">${CASH}</button><button data-pay="satispay" data-id="${esc(o.id)}" class="${o.pagato&&o.metodo==='satispay'?'on':''}" aria-label="Pagato con Satispay">${SP}</button><button data-pay="paypal" data-id="${esc(o.id)}" class="${o.pagato&&o.metodo==='paypal'?'on':''}" aria-label="Pagato con PayPal">${PP}</button></span>${partPay(o)}</td>
     <td class="c"><input type="checkbox" data-flag="consegnato" data-id="${esc(o.id)}" ${o.consegnato?'checked':''} aria-label="Consegnato">${partDlv(o)}</td>
-  </tr>${openDet.has(o.id)?`<tr class="detr"><td colspan="8">${OliOrd.row(o, { del: true })}</td></tr>`:''}`).join('') || `<tr><td colspan="8" class="empty">Nessuna prenotazione.</td></tr>`;
+  </tr>${openDet.has(o.id)?`<tr class="detr"><td colspan="8">${OliOrd.row(o, { del: true })}</td></tr>`:''}`).join('') || `<tr><td colspan="8" class="empty">Nessun ordine.</td></tr>`;
   const s = (f)=>V.reduce((t,o)=>t+(+o[f]||0),0);
-  $('ptf').innerHTML = V.length ? `<tr><td></td><td colspan="3">${V.length} prenotazioni</td><td class="n">${s('litri')} lt</td><td class="n">${eur(s('euro'))}</td><td class="c">${(()=>{const r=V.reduce((t,o)=>t+OliOrd.rest(o),0);return r>0.005?`<div class="part">da avere <b>${eur(r)}</b></div>`:''})()}</td><td class="c">${(()=>{const l=V.reduce((t,o)=>t+OliOrd.left(o),0);return l?`<div class="part">da dare <b>${l} lt</b></div>`:''})()}</td></tr>` : '';
+  $('ptf').innerHTML = V.length ? `<tr><td></td><td colspan="3">${V.length} ordini</td><td class="n">${s('litri')} lt</td><td class="n">${eur(s('euro'))}</td><td class="c">${(()=>{const r=V.reduce((t,o)=>t+OliOrd.rest(o),0);return r>0.005?`<div class="part">da avere <b>${eur(r)}</b></div>`:''})()}</td><td class="c">${(()=>{const l=V.reduce((t,o)=>t+OliOrd.left(o),0);return l?`<div class="part">da dare <b>${l} lt</b></div>`:''})()}</td></tr>` : '';
   $('all').checked = V.length && V.every(o=>sel.has(o.id));
   $('selBar').hidden = !sel.size; $('selN').textContent = sel.size + (sel.size===1?' selezionata':' selezionate');
 }
-function renderCal(){
-  const td = today(); if (!calM) calM = td.slice(0,7); if (!calSel) calSel = td;
-  const byDay = {}; D.orders.forEach(o => { if (o.perIl) (byDay[o.perIl] = byDay[o.perIl] || []).push(o); });
-  const up = D.orders.filter(o => o.perIl && o.perIl >= td && !o.consegnato);
-  $('cCal').textContent = up.length;
-  const in7 = (()=>{ const d=new Date(td+'T12:00'); d.setDate(d.getDate()+6); return d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate()); })();
-  const noDate = D.orders.filter(o => !o.perIl && !o.consegnato);
-  $('calSum').innerHTML = `<span>Oggi: <b>${(byDay[td]||[]).reduce((t,o)=>t+OliOrd.left(o),0)}</b> lt</span><span>Prossimi 7 giorni: <b>${up.filter(o=>o.perIl<=in7).reduce((t,o)=>t+OliOrd.left(o),0)}</b> lt</span><span>Senza data, da dare: <b>${noDate.reduce((t,o)=>t+OliOrd.left(o),0)}</b> lt</span>`;
-  const [y,m] = calM.split('-').map(Number), first = new Date(y, m-1, 1);
-  $('calT').textContent = first.toLocaleDateString('it-IT',{month:'long',year:'numeric'});
-  const start = new Date(first); start.setDate(1 - ((first.getDay()+6)%7));
-  let h = ['Lun','Mar','Mer','Gio','Ven','Sab','Dom'].map(w=>`<div class="wd">${w}</div>`).join('');
-  for (let i=0; i<42; i++){
-    const d = new Date(start); d.setDate(start.getDate()+i);
-    const k = d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate());
-    if (i===35 && d.getMonth()!==m-1) break;
-    const A = byDay[k] || [], L = A;
-    const eg = L.reduce((t,o)=>t+o.litri,0), done = L.length && L.every(o=>o.consegnato);
-    h += `<button class="day ${d.getMonth()!==m-1?'out':''} ${k<td?'past':''} ${k===td?'today':''} ${k===calSel?'cur':''}" data-day="${k}"><span class="dn">${d.getDate()}</span>${L.length?`<span class="eg ${done?'ok':''}">${done?'✓ ':''}${eg}<span class="u"> lt</span></span>`:''}${A.slice(0,2).map(o=>`<span class="nm">${esc(o.nome)} ${esc(o.cognome)}</span>`).join('')+(A.length>2?`<span class="nm">+${A.length-2} altri</span>`:'')}</button>`;
-  }
-  $('cal').innerHTML = h;
-  const S = (byDay[calSel]||[]).slice().sort((a,b)=>a.consegnato-b.consegnato);
-  $('calD').innerHTML = `<h3>${new Date(calSel+'T12:00').toLocaleDateString('it-IT',{weekday:'long',day:'numeric',month:'long'})}</h3>` + (S.length ? `<div class="tw"><table><thead><tr><th>Nome</th><th class="tel">Telefono</th><th class="n">Olio</th><th class="n">€</th><th class="c">Pagato</th><th class="c">Consegnato</th></tr></thead><tbody>${S.map(o=>`<tr class="${o.pagato&&o.consegnato?'done':''}"><td><b>${esc(o.nome)} ${esc(o.cognome)}</b>${o.note?`<div class="note">“${esc(o.note)}”</div>`:''}</td><td class="tel">${o.telefono?`<a href="tel:${esc(o.telefono)}" style="color:inherit">${esc(o.telefono)}</a>`:''}</td><td class="n"><b>${o.litri} lt</b><div class="d" style="font-size:.78rem">${OliOrd.latt(o)}</div></td><td class="n">${eur(o.euro)}</td><td class="c"><span class="pay2">${o.pagato&&!o.metodo?'<b class="okm">✓</b>':''}<button data-pay="contanti" data-id="${esc(o.id)}" class="${o.pagato&&o.metodo==='contanti'?'on':''}" aria-label="Pagato in contanti">${CASH}</button><button data-pay="satispay" data-id="${esc(o.id)}" class="${o.pagato&&o.metodo==='satispay'?'on':''}" aria-label="Pagato con Satispay">${SP}</button><button data-pay="paypal" data-id="${esc(o.id)}" class="${o.pagato&&o.metodo==='paypal'?'on':''}" aria-label="Pagato con PayPal">${PP}</button></span></td><td class="c"><input type="checkbox" data-flag="consegnato" data-id="${esc(o.id)}" ${o.consegnato?'checked':''} aria-label="Consegnato"></td></tr>`).join('')}</tbody><tfoot><tr><td>${S.length === 1 ? '1 prenotazione' : S.length + ' prenotazioni'}</td><td class="tel"></td><td class="n">${S.reduce((t,o)=>t+o.litri,0)} lt</td><td class="n">${eur(S.reduce((t,o)=>t+o.euro,0))}</td><td colspan="2"></td></tr></tfoot></table></div>` : '<p class="empty">Nessuna prenotazione per questo giorno.</p>');
-}
-$('cal').onclick = e => { const b=e.target.closest('[data-day]'); if(!b) return; calSel=b.dataset.day; if(calSel.slice(0,7)!==calM) calM=calSel.slice(0,7); renderCal(); };
-const calMove = n => { const [y,m]=calM.split('-').map(Number), d=new Date(y,m-1+n,1); calM=d.getFullYear()+'-'+pad(d.getMonth()+1); renderCal(); };
-$('calPrev').onclick = () => calMove(-1); $('calNext').onclick = () => calMove(1);
-$('calToday').onclick = () => { calSel=today(); calM=calSel.slice(0,7); renderCal(); };
 function renderLoads(){
   const L = [...D.loads].sort((a,b)=>(b.data+b.ins).localeCompare(a.data+a.ins));
   const by = {}; L.forEach(l=>by[l.utente]=(by[l.utente]||0)+l.litri);
@@ -544,7 +515,7 @@ const link = u => `${SITE}/area.html?k=${u.tk}`;
 function renderUsers(){
   $('utb').innerHTML = D.users.map(u=>`<tr>
     <td><b>${esc(u.nome)}</b></td>
-    <td><span class="pill ${u.ruolo==='intermedio'?'i':''}">${u.ruolo==='intermedio'?'Olio + prenotazioni + costi + grafico':'Solo carico olio'}</span></td>
+    <td><span class="pill ${u.ruolo==='intermedio'?'i':''}">${u.ruolo==='intermedio'?'Olio + ordini + costi + grafico':'Solo carico olio'}</span></td>
     <td class="d">${dIt(u.creato)}</td>
     <td><div class="ub"><button class="btn ghost" data-copy="${esc(u.tk)}">Copia link</button><button class="btn ghost" data-wa="${esc(u.tk)}">WhatsApp</button></div></td>
     <td><div class="ub"><button class="btn ghost" data-edit="${esc(u.tk)}">Modifica</button><button class="btn red" data-udel="${esc(u.tk)}">Elimina</button></div></td>
@@ -556,10 +527,10 @@ $('tabs').onclick = e => { const b=e.target.closest('button'); if(!b) return; ta
   document.querySelectorAll('#tabs button').forEach(x=>x.classList.toggle('on',x===b));
   document.querySelectorAll('[data-p]').forEach(p=>p.hidden = p.dataset.p!==tab); if(tab==='gra'&&chart) chart.update({}); if(tab==='sic') secLoad(); };
 // clic sui riepiloghi della tendina: apre e mostra l'elenco giusto
-const PTIT = {'':'Tutte le prenotazioni', ap:'Ordini aperti', nc:'Olio da dare', np:'Soldi da avere'};
+const PTIT = {'':'Tutti gli ordini', ap:'Ordini aperti', nc:'Olio da dare', np:'Soldi da avere'};
 const showList = go => { const L = $('prenList'); if (go === null) { L.hidden = true; } else { L.hidden = false; pf = go;
     document.querySelectorAll('#pf button').forEach(x=>x.classList.toggle('on',x.dataset.f===pf)); renderOrders(); }
-  document.querySelectorAll('#obadge [data-go]').forEach(x => x.classList.toggle('on', !L.hidden && x.dataset.go === pf)); $('plTitle').textContent = PTIT[pf] || 'Prenotazioni'; };
+  document.querySelectorAll('#obadge [data-go]').forEach(x => x.classList.toggle('on', !L.hidden && x.dataset.go === pf)); $('plTitle').textContent = PTIT[pf] || 'Ordini'; };
 $('obadge').onclick = e => { const s=e.target.closest('[data-go]'); if(!s) return;
   showList(!$('prenList').hidden && pf === s.dataset.go ? null : s.dataset.go); if (!$('prenList').hidden) setTimeout(()=>$('prenList').scrollIntoView({block:'start',behavior:'smooth'}),50); };
 $('plClose').onclick = () => showList(null);
@@ -657,7 +628,7 @@ document.querySelectorAll('[data-bulk]').forEach(b => b.onclick = () => { flag([
 OliOrd.bind($('ptb'), post, local => local ? renderOrders() : load(), id => D.orders.find(o=>o.id===id));
 $('ptb').addEventListener('click', e => { const b = e.target.closest('[data-det]'); if(!b) return; const id = b.dataset.det; openDet.has(id) ? openDet.delete(id) : openDet.add(id); renderOrders(); });
 $('bulkDel').onclick = async () => {
-  const ids = [...sel]; if(!sure('bulk'+ids.join(),`Tocca di nuovo "Elimina" per spostare ${ids.length===1?'la prenotazione':ids.length+' prenotazioni'} nel cestino (si ripristinano per 30 giorni)`)) return;
+  const ids = [...sel]; if(!sure('bulk'+ids.join(),`Tocca di nuovo "Elimina" per spostare ${ids.length===1?"l'ordine":ids.length+' ordini'} nel cestino (si ripristinano per 30 giorni)`)) return;
   try{ const j = await post({action:'delOrders', ids}); if(!j.ok) throw new Error(j.error); sel.clear(); await load(); toast(`Nel cestino: ${j.deleted}`); }catch(x){ toast(x.message); }
 };
 $('trb').onclick = async e => {
@@ -672,7 +643,7 @@ $('csv').onclick = () => {
     ...V.map(o=>[o.data,o.nome,o.cognome,o.telefono,o.q3,o.q5,o.litri,String(o.euro).replace('.',','),o.pagato?'sì':'no',o.consegnato?'sì':'no',o.perIl,o.note])];
   const a = document.createElement('a');
   a.href = URL.createObjectURL(new Blob(['﻿'+rows.map(r=>r.map(q).join(';')).join('\n')],{type:'text/csv'}));
-  a.download = 'oliamo-prenotazioni'+($('py').value?'-'+$('py').value:'')+'.csv'; a.click();
+  a.download = 'oliamo-ordini'+($('py').value?'-'+$('py').value:'')+'.csv'; a.click();
 };
 
 $('ld').value = today(); $('cd').value = today();
@@ -708,7 +679,7 @@ document.addEventListener('click', async e => {
   if (d.copy){ const u = D.users.find(x=>x.tk===d.copy);
     try{ await navigator.clipboard.writeText(link(u)); toast('Link di '+u.nome+' copiato'); }catch(x){ toast(link(u)); } }
   if (d.wa){ const u = D.users.find(x=>x.tk===d.wa);
-    const t = `Ciao ${u.nome}! Questo è il tuo link per OliAmo: da qui puoi caricare l'olio disponibile${u.ruolo==='intermedio'?', seguire le prenotazioni, segnare i costi e vedere il grafico':''}.\n${link(u)}`;
+    const t = `Ciao ${u.nome}! Questo è il tuo link per OliAmo: da qui puoi caricare l'olio disponibile${u.ruolo==='intermedio'?', seguire gli ordini, segnare i costi e vedere il grafico':''}.\n${link(u)}`;
     window.open('https://wa.me/?text='+encodeURIComponent(t), '_blank'); }
   if (d.edit){ const u = D.users.find(x=>x.tk===d.edit); editTk=u.tk; $('un').value=u.nome; $('ur').value=u.ruolo; $('usave').textContent='Salva'; $('ucancel').hidden=false; $('un').focus(); }
   if (d.udel){ const u = D.users.find(x=>x.tk===d.udel); if(!sure('udel'+u.tk,`Tocca di nuovo per eliminare ${u.nome}: il suo link smetterà di funzionare (i dati restano)`)) return;
