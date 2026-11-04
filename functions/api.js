@@ -92,7 +92,8 @@ const price_ = v => { const n = Math.round((parseFloat(String(v == null ? '' : v
 const fmtClean = L => (Array.isArray(L) ? L : []).slice(0, 12).map(f => ({
   id: String(f.id || '').replace(/[^a-z0-9]/gi, '').slice(0, 12) || newId('f'),
   tipo: f.tipo === 'bottiglia' ? 'bottiglia' : 'lattina',
-  lt: r2(num(f.lt)), prezzo: price_(f.prezzo), on: f.on !== false && f.on !== 0 && f.on !== '0'
+  lt: r2(num(f.lt)), prezzo: price_(f.prezzo), on: f.on !== false && f.on !== 0 && f.on !== '0',
+  nota: clean(f.nota, 60)   // vignetta facoltativa sulla scheda (es. "Formato ideale per la tua prima bruschetta!")
 })).filter(f => f.lt > 0 && f.lt <= 100).sort((a, b) => a.lt - b.lt || (a.tipo === 'bottiglia' ? -1 : 1));
 async function settings_(db) {
   const s = {}; (await all(db, "SELECT k, v FROM settings WHERE k IN ('open','msg','p3','p5','formati')")).forEach(r => s[r.k] = r.v);
@@ -361,7 +362,7 @@ export async function onRequestGet({ request, env, waitUntil }) {
   waitUntil(tidy_(db).catch(() => {}));
   if (p.action === 'info') {
     const s = await settings_(db), left = await available_(db), priced = s.priced;
-    const formati = s.formati.filter(f => f.on && f.prezzo > 0).map(({ id, tipo, lt, prezzo }) => ({ id, tipo, lt, prezzo }));
+    const formati = s.formati.filter(f => f.on && f.prezzo > 0).map(({ id, tipo, lt, prezzo, nota }) => ({ id, tipo, lt, prezzo, nota }));
     return json({ ok: true, open: s.open && priced && left > 0, closedByHand: !s.open || !priced, available: left,
       msg: !priced ? NOPRICE_MSG : (s.msg || DEFAULT_MSG), formati, p3: s.p3, p5: s.p5, minData: addDays(today_(), 1) });
   }
