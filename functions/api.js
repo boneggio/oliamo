@@ -509,13 +509,14 @@ async function handOrder_(db, d, u) {
   if (!litri) return json({ ok: false, error: 'Scegli quante lattine o bottiglie' });
   const euro = d.euro === '' || d.euro == null ? auto : r2(num(d.euro));
   if (!(euro >= 0) || euro > 100000) return json({ ok: false, error: 'Importo non valido' });
-  const metodo = ['contanti', 'satispay', 'paypal'].includes(d.metodo) ? d.metodo : '';
+  const regalato = d.regalato === true, consegnato = d.consegnato !== false;   // dal modulo: già consegnato? regalato?
+  const metodo = !regalato && ['contanti', 'satispay', 'paypal'].includes(d.metodo) ? d.metodo : '';
   const day = isDate(d.data) ? d.data : today_(), id = newId('p');
-  const r = await db.prepare(`INSERT INTO orders (id, data, nome, cognome, telefono, q3, q5, pezzi, litri, euro, note, per_il, mano)
-    SELECT ?, ?, ?, '', ?, ?, ?, ?, ?, ?, ?, '', 1 WHERE ${d.force ? '1' : AV + ' >= ?'}`)
-    .bind(...[id, day + now_().slice(10), nome, clean(d.telefono, 30), q3, q5, JSON.stringify(P), litri, euro, clean(d.note, 500)].concat(d.force ? [] : [litri])).run();
+  const r = await db.prepare(`INSERT INTO orders (id, data, nome, cognome, telefono, q3, q5, pezzi, litri, euro, note, per_il, mano, regalato)
+    SELECT ?, ?, ?, '', ?, ?, ?, ?, ?, ?, ?, '', 1, ? WHERE ${d.force ? '1' : AV + ' >= ?'}`)
+    .bind(...[id, day + now_().slice(10), nome, clean(d.telefono, 30), q3, q5, JSON.stringify(P), litri, euro, clean(d.note, 500), regalato ? 1 : 0].concat(d.force ? [] : [litri])).run();
   if (!r.meta.changes) { const av = await available_(db); return json({ ok: false, short: true, need: litri, available: av, error: 'Ci sono solo ' + lt(av) + ' di olio disponibili.' }); }
-  await addMove_(db, id, day, litri, metodo ? euro : 0, metodo, u);
+  if (consegnato || (metodo && euro > 0)) await addMove_(db, id, day, consegnato ? litri : 0, metodo ? euro : 0, metodo, u);
   await sync_(db, id);
   return json({ ok: true, available: await available_(db) });
 }
