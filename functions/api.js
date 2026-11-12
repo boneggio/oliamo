@@ -48,12 +48,14 @@ const pzTxt = P => (P || []).filter(x => x.n > 0).map(x => x.n + ' ' + (TIPI[x.t
 const legacyPz = (q3, q5) => [q3 ? { tipo: 'lattina', lt: 3, n: q3 } : null, q5 ? { tipo: 'lattina', lt: 5, n: q5 } : null].filter(Boolean);
 const parsePz = r => { try { const P = JSON.parse(r.pezzi || 'null'); if (Array.isArray(P) && P.length) return P; } catch (e) {} return legacyPz(r.q3 || 0, r.q5 || 0); };
 
-/** La colonna orders.pezzi viene aggiunta da sola la prima volta (non tocca i dati che ci sono) */
+/** Le colonne nuove di orders (pezzi, regalato) vengono aggiunte da sole la prima volta (non toccano i dati che ci sono) */
 let colOk = false;
 async function ensure_(db) {
   if (colOk) return;
-  try { await db.prepare('SELECT pezzi FROM orders LIMIT 1').all(); }
-  catch (e) { try { await db.prepare("ALTER TABLE orders ADD COLUMN pezzi TEXT DEFAULT ''").run(); } catch (e2) {} }
+  for (const [c, def] of [['pezzi', "TEXT DEFAULT ''"], ['regalato', 'INTEGER DEFAULT 0']]) {
+    try { await db.prepare(`SELECT ${c} FROM orders LIMIT 1`).all(); }
+    catch (e) { try { await db.prepare(`ALTER TABLE orders ADD COLUMN ${c} ${def}`).run(); } catch (e2) {} }
+  }
   colOk = true;
 }
 const eurTxt = e => (+e || 0).toFixed(2).replace('.', ',') + ' €';
@@ -69,7 +71,7 @@ const orders_ = async db => {
       id: r.id, data: r.data, nome: r.nome, cognome: r.cognome || '', telefono: r.telefono || '',
       q3: r.q3 || 0, q5: r.q5 || 0, pezzi: parsePz(r), litri: r.litri, euro: r.euro, note: r.note || '',
       pagato: !!r.pagato, consegnato: !!r.consegnato, dataPag: r.data_pag || '', metodo: r.metodo || '', perIl: r.per_il || '',
-      stato: r.stato || 'ok', eliminato: r.eliminato || '', mano: !!r.mano,
+      stato: r.stato || 'ok', eliminato: r.eliminato || '', mano: !!r.mano, regalato: !!r.regalato,
       payments, paid: Math.round(payments.reduce((t, p) => t + p.euro, 0) * 100) / 100,
       consegnati: Math.min(r.litri, payments.reduce((t, p) => t + p.litri, 0))
     };
@@ -555,19 +557,31 @@ async function sync_(db, id) {
 }
 /** Quanto manca da avere e quanti litri da dare */
 const remaining_ = async (db, id) => {
-  const r = await db.prepare(`SELECT euro - COALESCE((SELECT SUM(euro) FROM payments WHERE order_id = orders.id), 0) AS e,
+  const r = await db.prepare(`SELECT CASE WHEN COALESCE(regalato, 0) = 1 THEN 0 ELSE euro - COALESCE((SELECT SUM(euro) FROM payments WHERE order_id = orders.id), 0) END AS e,
     litri - COALESCE((SELECT SUM(litri) FROM payments WHERE order_id = orders.id), 0) AS u FROM orders WHERE id = ?`).bind(id).first();
   return r ? { e: Math.max(0, Math.round(r.e * 100) / 100), u: Math.max(0, r2(r.u)) } : null;
 };
 const addMove_ = (db, id, data, litri, euro, metodo, u) => db.prepare('INSERT INTO payments (id, order_id, data, euro, litri, metodo, utente, ins) VALUES (?, ?, ?, ?, ?, ?, ?, ?)')
   .bind(newId('m'), id, data, euro, litri, euro > 0 ? (['satispay', 'paypal'].includes(metodo) ? metodo : 'contanti') : '', u.nome, now_()).run();
 
-/** Tutto pagato / niente pagato, tutto consegnato / niente consegnato */
+/** Tutto pagato / niente pagato, tutto consegnato / niente consegnato, regalato sì / no */
 async function flag_(db, d, u) {
-  const field = d.field === 'pagato' ? 'pagato' : d.field === 'consegnato' ? 'consegnato' : '';
+  const field = ['pagato', 'consegnato', 'regalato'].includes(d.field) ? d.field : '';
   if (!field) return json({ ok: false, error: 'Campo non valido' });
   const ids = (d.ids || []).map(String), on = d.value === true;
   let n = 0;
+  if (field === 'regalato') {   // regalato: niente soldi da avere e niente incasso (eventuali pagamenti vengono azzerati)
+    for (const id of ids) {
+      const r = await db.prepare('UPDATE orders SET regalato = ? WHERE id = ?').bind(on ? 1 : 0, id).run();
+      if (!r.meta.changes) continue;
+      if (on) {
+        await db.prepare("UPDATE payments SET euro = 0, metodo = '' WHERE order_id = ?").bind(id).run();
+        await db.prepare('DELETE FROM payments WHERE order_id = ? AND euro <= 0 AND COALESCE(litri,0) <= 0').bind(id).run();
+      }
+      await sync_(db, id); n++;
+    }
+    return json({ ok: true, updated: n });
+  }
   for (const id of ids) {
     const rest = await remaining_(db, id);
     if (!rest) continue;
