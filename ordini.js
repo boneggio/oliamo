@@ -312,7 +312,7 @@
     opt = opt || {};
     addCss();
     const toast = t => (window.toast ? window.toast(t) : alert(t));
-    let hm = '', F = [], FSIG = '';
+    let hm = '', hc = true, F = [], FSIG = '', M = [];
     const elM = opt.mano || el;
     const box = h => `<div class="os oo" style="border:0;padding:0;background:none">${h}</div>`;
     const mano = `<details class="oo-adv" data-os="mano"><summary>🤝 Olio dato a mano ▾</summary><div>
@@ -320,12 +320,16 @@
           <div class="rw"><input name="nome" placeholder="A chi l'hai dato" maxlength="60" style="flex:1 1 160px" aria-label="A chi l'hai dato" required></div>
           <div class="rw" data-fq></div>
           <div class="rw"><input name="euro" inputmode="decimal" placeholder="Prezzo €" aria-label="Prezzo" style="width:110px"><span class="hint" data-pz></span></div>
+          <div class="rw"><span class="hint">Consegnato?</span><div class="oo-m">
+            <button type="button" data-hc="1" class="on">✓ Sì, già dato</button>
+            <button type="button" data-hc="0">Non ancora</button></div></div>
           <div class="rw"><span class="hint">Pagato?</span><div class="oo-m">
             <button type="button" data-hm="" class="on">Non ancora</button>
             <button type="button" data-hm="contanti">${MET.contanti}</button>
             <button type="button" data-hm="satispay">${MET.satispay}</button>
-            <button type="button" data-hm="paypal">${MET.paypal}</button></div></div>
-          <div class="rw"><button class="ob pr">Registra</button><span class="hint">Risulta già consegnato. Lo trovi tra gli ordini con 🤝 A mano.</span></div>
+            <button type="button" data-hm="paypal">${MET.paypal}</button>
+            <button type="button" data-hm="regalo">🎁 Regalato</button></div></div>
+          <div class="rw"><button class="ob pr">Registra</button><span class="hint">Lo trovi qui sotto nello storico e tra gli ordini con 🤝 A mano: lì puoi cambiare consegnato, pagato o regalato.</span></div>
         </form></div></details>
       <details class="oo-adv" data-os="mh" hidden><summary>📋 Storico olio dato a mano <span data-mh-n></span> ▾</summary><div><div class="mh-s" data-mh-s></div><div class="mh-l" data-mh></div></div></details>`;
     // la parte "A mano" si disegna una volta sola (non si perde quello che stai scrivendo quando la pagina si aggiorna)
@@ -345,13 +349,14 @@
           return `<label class="hint" style="display:flex;gap:6px;align-items:center">${ico(f, max, 30)}${nm}${f.on && f.prezzo > 0 ? '' : ' <small>(non in vendita)</small>'} <input data-fid="${esc(f.id)}" type="number" inputmode="numeric" min="0" value="${esc(old[f.id] || 0)}" aria-label="${nm}"></label>`; }).join('') || '<span class="hint">Prima crea i formati nel report (💶 Formati e prezzi).</span>';
       }
       const hb = elM.querySelector('[data-os=mh]'); if (!hb) return;
-      const M = (D.orders || []).filter(o => o.mano && !o.eliminato).sort((x, y) => y.data.localeCompare(x.data));
+      M = (D.orders || []).filter(o => o.mano && !o.eliminato).sort((x, y) => y.data.localeCompare(x.data));
       hb.hidden = !D.orders; elM.querySelector('[data-os=mano]').hidden = !D.orders;
       const inc = M.reduce((t, o) => t + paid(o), 0), dap = M.reduce((t, o) => t + rest(o), 0);
       hb.querySelector('[data-mh-n]').textContent = M.length ? `(${M.length})` : '';
-      hb.querySelector('[data-mh-s]').innerHTML = M.length ? `<span>🫒 <b>${lt(M.reduce((t, o) => t + o.litri, 0))}</b></span><span>💶 incassati <b>${eur(inc)}</b></span>${dap > 0.005 ? `<span class="r">da avere <b>${eur(dap)}</b></span>` : ''}` : '';
-      hb.querySelector('[data-mh]').innerHTML = M.map(o => `<div class="mh-r"><span class="d">${dIt(o.data)}</span><b>${esc(o.nome)} ${esc(o.cognome || '')}</b><span>${latt(o)}</span><span>${eur(o.euro)}</span>${rest(o) > 0.005
-        ? `<span class="r">da avere ${eur(rest(o))}</span>` : o.regalato ? '<span class="ok">🎁 regalato</span>' : `<span class="ok">✓ ${usedM(o).map(m => ({ contanti: 'contanti', satispay: 'Satispay', paypal: 'PayPal' })[m] || '').join(' + ') || 'pagato'}</span>`}</div>`).join('') || "<p class=\"hint\">Ancora niente olio dato a mano.</p>";
+      hb.querySelector('[data-mh-s]').innerHTML = M.length ? `<span>🫒 <b>${lt(M.reduce((t, o) => t + o.litri, 0))}</b></span><span>💶 incassati <b>${eur(inc)}</b></span>${dap > 0.005 ? `<span class="r">da avere <b>${eur(dap)}</b></span>` : ''}${M.some(o => o.regalato) ? `<span>🎁 regalati <b>${eur(M.filter(o => o.regalato).reduce((t, o) => t + o.euro, 0))}</b></span>` : ''}` : '';
+      const hl = hb.querySelector('[data-mh]');
+      bind(hl, post, reload, id => M.find(o => o.id === id));   // ogni riga si apre: consegnato, pagato, regalato
+      hl.innerHTML = M.map(o => mini(o, { del: true })).join('') || "<p class=\"hint\">Ancora niente olio dato a mano.</p>";
     };
     const qOf = f => { const o = {}; f.querySelectorAll('[data-fid]').forEach(i => { const v = Math.max(0, parseInt(i.value, 10) || 0); if (v) o[i.dataset.fid] = v; }); return o; };
     const sumOf = (Q, k) => r2(F.reduce((t, f) => t + (Q[f.id] || 0) * f[k], 0));
@@ -360,6 +365,8 @@
       c.addEventListener('click', e => {
         const m = e.target.closest('[data-hm]');
         if (m) { hm = m.dataset.hm; m.parentNode.querySelectorAll('button').forEach(x => x.classList.toggle('on', x === m)); }
+        const k = e.target.closest('[data-hc]');
+        if (k) { hc = k.dataset.hc === '1'; k.parentNode.querySelectorAll('button').forEach(x => x.classList.toggle('on', x === k)); }
       });
       c.addEventListener('submit', async e => {
         const f = e.target; if (!f.dataset || f.dataset.of !== 'mano') return;
@@ -367,9 +374,9 @@
         const Q = qOf(f), nome = f.nome.value.trim();
         if (!nome) return toast("Scrivi a chi hai dato l'olio"); if (!Object.keys(Q).length) return toast('Scrivi quante lattine o bottiglie');
         const btn = f.querySelector('.ob.pr'); btn.disabled = true;
-        try { const j = await post({ action: 'handOrder', nome, pezzi: Q, euro: f.euro.value.trim(), metodo: hm });
+        try { const j = await post({ action: 'handOrder', nome, pezzi: Q, euro: f.euro.value.trim(), metodo: hm === 'regalo' ? '' : hm, regalato: hm === 'regalo', consegnato: hc });
           if (!j.ok) throw new Error(j.error);
-          toast(`${nome}: ${lt(sumOf(Q, 'lt'))} dati a mano ✓`); f.reset(); hm = ''; f.querySelectorAll('[data-hm]').forEach(x => x.classList.toggle('on', x.dataset.hm === '')); f.querySelector('[data-pz]').textContent = ''; f.euro.placeholder = 'Prezzo €'; await reload(); }
+          toast(`${nome}: ${lt(sumOf(Q, 'lt'))} ${hm === 'regalo' ? 'regalati 🎁' : hc ? 'dati a mano ✓' : 'da dare ✓'}`); f.reset(); hm = ''; hc = true; f.querySelectorAll('[data-hm]').forEach(x => x.classList.toggle('on', x.dataset.hm === '')); f.querySelectorAll('[data-hc]').forEach(x => x.classList.toggle('on', x.dataset.hc === '1')); f.querySelector('[data-pz]').textContent = ''; f.euro.placeholder = 'Prezzo €'; await reload(); }
         catch (x) { toast(x.message || 'Non salvato'); } finally { btn.disabled = false; }
       });
     });
