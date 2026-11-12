@@ -54,7 +54,7 @@ input[type=checkbox]{width:18px;height:18px;padding:0;accent-color:var(--brand-2
 .sec .panel{min-width:0}.sec .panel>*{min-width:0}
 .sec code{font-size:.85rem;word-break:break-all;background:var(--card);padding:2px 6px;border-radius:6px}
 .sec .codes{display:grid;grid-template-columns:repeat(2,max-content);gap:4px 18px;font:600 1rem ui-monospace,monospace}
-.kpis{display:grid;grid-template-columns:repeat(6,1fr);gap:10px}
+.kpis{display:grid;grid-template-columns:repeat(7,1fr);gap:10px}
 @media (max-width:1100px){.kpis{grid-template-columns:repeat(4,1fr)}}
 .stockw{margin-bottom:14px;max-width:640px}
 .kpi.hl .sub{color:#fff;opacity:1}
@@ -98,6 +98,7 @@ details.pren>.in{padding:14px}
 .fm-a{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
 .fm-a .btn{min-height:44px}
 .fm .fm-n{grid-column:2 / -1}
+.gift{display:inline-block;padding:4px 10px;border-radius:99px;background:color-mix(in srgb,var(--yolk) 30%,var(--card));font-weight:700;font-size:.82rem;white-space:nowrap}
 .riserv{margin-top:16px;padding-top:14px;border-top:1px dashed var(--line);display:grid;gap:10px}
 .riserv .rl{display:flex;gap:8px;flex-wrap:wrap}.riserv .rl input{flex:1 1 240px;min-height:44px}.riserv .btn,.riserv .sw{min-height:44px}
 @media (max-width:640px){.fm{grid-template-columns:48px 1fr 1fr;}.fm .pv{grid-row:span 2}.fm .del{justify-self:end}}
@@ -303,7 +304,7 @@ tr.rej td{opacity:.5}tr.rej b{text-decoration:line-through}
           <button class="btn red" id="bulkDel">Elimina</button>
         </div>
         <div class="tw"><table>
-          <thead><tr><th class="c"><input type="checkbox" id="all" aria-label="Seleziona tutte"></th><th>Data</th><th>Nome</th><th>Telefono</th><th class="n">Olio</th><th class="n">€</th><th class="c">Pagato</th><th class="c">Consegnato</th></tr></thead>
+          <thead><tr><th class="c"><input type="checkbox" id="all" aria-label="Seleziona tutte"></th><th>Data</th><th>Nome</th><th>Telefono</th><th class="n">Olio</th><th class="n">€</th><th class="c">Pagato</th><th class="c">Consegnato</th><th class="c">Regalato</th></tr></thead>
           <tbody id="ptb"></tbody><tfoot id="ptf"></tfoot>
         </table></div>
         <details class="trash" id="trashBox">
@@ -455,12 +456,13 @@ function render(){
   STOCK.update(D);
   const O = D.orders, sum = (l,f)=>l.reduce((t,x)=>t+(+x[f]||0),0);
   const P = O.flatMap(o=>o.payments||[]);
-  const costi = sum(D.costs,'euro'), inc = sum(P,'euro');
+  const costi = sum(D.costs,'euro'), inc = sum(P,'euro'), G = O.filter(o=>o.regalato);
   $('kpis').innerHTML = [
     ['Olio disponibile', OliOrd.lt(D.available), 'hl', '<span class="sub">si prenota sul sito</span>'],
     ['Olio da dare', OliOrd.lt(O.reduce((t,o)=>t+OliOrd.left(o),0))],
-    ['Soldi da avere', eur(sum(O,'euro')-inc)],
+    ['Soldi da avere', eur(O.reduce((t,o)=>t+OliOrd.rest(o),0))],
     ['Incassato', eur(inc), '', `<span class="sub">${CASH} ${eur(sum(P.filter(p=>p.metodo!=='satispay'&&p.metodo!=='paypal'),'euro'))} · ${SP} ${eur(sum(P.filter(p=>p.metodo==='satispay'),'euro'))}${P.some(p=>p.metodo==='paypal')?` · ${PP} ${eur(sum(P.filter(p=>p.metodo==='paypal'),'euro'))}`:''}</span>`],
+    ['🎁 Regalato', eur(sum(G,'euro')), '', `<span class="sub">${OliOrd.lt(sum(G,'litri'))} · ${G.length} ${G.length===1?'ordine':'ordini'} · non entra negli incassi</span>`],
     ['Costi', eur(costi)],
     ['Margine', `<span class="${inc-costi<0?'neg':''}">${eur(inc-costi)}</span>`]
   ].map(([l,v,c,x])=>`<div class="card kpi ${c||''}"><small>${l}</small><b>${v}</b>${x||''}</div>`).join('');
@@ -483,7 +485,7 @@ function render(){
 
 const openDet = new Set();
 const partPay = o => { const p = OliOrd.paid(o), r = OliOrd.rest(o); return r > 0.005 ? `<div class="part">da avere <b>${eur(r)}</b>${p > 0.005 ? `<br><small>pagati ${eur(p)}</small>` : ''}</div>` : ''; };
-const partDlv = o => { const c = OliOrd.cons(o), l = OliOrd.left(o); return l ? `<div class="part">da dare <b>${l} lt</b>${c ? `<br><small>dati ${c} lt</small>` : ''}</div>` : ''; };
+const partDlv = o => { const c = OliOrd.cons(o), l = OliOrd.left(o); return l ? `<div class="part">da dare <b>${OliOrd.lt(l)}</b>${c ? `<br><small>dati ${OliOrd.lt(c)}</small>` : ''}</div>` : ''; };
 function renderTrash(){
   const T = D.trash || [];
   $('trN').textContent = T.length ? '(' + T.length + ')' : '';
@@ -511,11 +513,12 @@ function renderOrders(){
     <td>${o.telefono?`<a href="tel:${esc(o.telefono)}" style="color:inherit">${esc(o.telefono)}</a>`:''}</td>
     <td class="n"><b>${OliOrd.lt(o.litri)}</b><div class="d" style="font-size:.78rem">${OliOrd.latt(o)}</div></td>
     <td class="n">${eur(o.euro)}</td>
-    <td class="c"><span class="pay2 ${o.pagato&&!o.metodo?'old':''}" title="${o.pagato?(o.metodo==='satispay'?'Pagato con Satispay':o.metodo==='paypal'?'Pagato con PayPal':o.metodo==='contanti'?'Pagato in contanti':'Pagato'):'Da avere'}">${o.pagato&&!o.metodo?'<b class="okm">✓</b>':''}<button data-pay="contanti" data-id="${esc(o.id)}" class="${o.pagato&&o.metodo==='contanti'?'on':''}" aria-label="Pagato in contanti">${CASH}</button><button data-pay="satispay" data-id="${esc(o.id)}" class="${o.pagato&&o.metodo==='satispay'?'on':''}" aria-label="Pagato con Satispay">${SP}</button><button data-pay="paypal" data-id="${esc(o.id)}" class="${o.pagato&&o.metodo==='paypal'?'on':''}" aria-label="Pagato con PayPal">${PP}</button></span>${partPay(o)}</td>
+    <td class="c">${o.regalato?'<span class="gift">🎁 regalato</span>':`<span class="pay2 ${o.pagato&&!o.metodo?'old':''}" title="${o.pagato?(o.metodo==='satispay'?'Pagato con Satispay':o.metodo==='paypal'?'Pagato con PayPal':o.metodo==='contanti'?'Pagato in contanti':'Pagato'):'Da avere'}">${o.pagato&&!o.metodo?'<b class="okm">✓</b>':''}<button data-pay="contanti" data-id="${esc(o.id)}" class="${o.pagato&&o.metodo==='contanti'?'on':''}" aria-label="Pagato in contanti">${CASH}</button><button data-pay="satispay" data-id="${esc(o.id)}" class="${o.pagato&&o.metodo==='satispay'?'on':''}" aria-label="Pagato con Satispay">${SP}</button><button data-pay="paypal" data-id="${esc(o.id)}" class="${o.pagato&&o.metodo==='paypal'?'on':''}" aria-label="Pagato con PayPal">${PP}</button></span>${partPay(o)}`}</td>
     <td class="c"><input type="checkbox" data-flag="consegnato" data-id="${esc(o.id)}" ${o.consegnato?'checked':''} aria-label="Consegnato">${partDlv(o)}</td>
-  </tr>${openDet.has(o.id)?`<tr class="detr"><td colspan="8">${OliOrd.row(o, { del: true })}</td></tr>`:''}`).join('') || `<tr><td colspan="8" class="empty">Nessun ordine.</td></tr>`;
+    <td class="c"><input type="checkbox" data-flag="regalato" data-id="${esc(o.id)}" ${o.regalato?'checked':''} aria-label="Regalato"></td>
+  </tr>${openDet.has(o.id)?`<tr class="detr"><td colspan="9">${OliOrd.row(o, { del: true })}</td></tr>`:''}`).join('') || `<tr><td colspan="9" class="empty">Nessun ordine.</td></tr>`;
   const s = (f)=>V.reduce((t,o)=>t+(+o[f]||0),0);
-  $('ptf').innerHTML = V.length ? `<tr><td></td><td colspan="3">${V.length} ordini</td><td class="n">${s('litri')} lt</td><td class="n">${eur(s('euro'))}</td><td class="c">${(()=>{const r=V.reduce((t,o)=>t+OliOrd.rest(o),0);return r>0.005?`<div class="part">da avere <b>${eur(r)}</b></div>`:''})()}</td><td class="c">${(()=>{const l=V.reduce((t,o)=>t+OliOrd.left(o),0);return l?`<div class="part">da dare <b>${l} lt</b></div>`:''})()}</td></tr>` : '';
+  $('ptf').innerHTML = V.length ? `<tr><td></td><td colspan="3">${V.length} ordini</td><td class="n">${OliOrd.lt(s('litri'))}</td><td class="n">${eur(s('euro'))}</td><td class="c">${(()=>{const r=V.reduce((t,o)=>t+OliOrd.rest(o),0);return r>0.005?`<div class="part">da avere <b>${eur(r)}</b></div>`:''})()}</td><td class="c">${(()=>{const l=V.reduce((t,o)=>t+OliOrd.left(o),0);return l?`<div class="part">da dare <b>${OliOrd.lt(l)}</b></div>`:''})()}</td><td class="c">${(()=>{const g=V.filter(o=>o.regalato);return g.length?`<div class="part">🎁 <b>${eur(g.reduce((t,o)=>t+o.euro,0))}</b></div>`:''})()}</td></tr>` : '';
   $('all').checked = V.length && V.every(o=>sel.has(o.id));
   $('selBar').hidden = !sel.size; $('selN').textContent = sel.size + (sel.size===1?' selezionata':' selezionate');
 }
@@ -716,8 +719,8 @@ $('trb').onclick = async e => {
 };
 $('csv').onclick = () => {
   const V = ordersView(), q = v => `"${String(v??'').replace(/"/g,'""')}"`;
-  const rows = [['Data','Nome','Cognome','Telefono','Formati','Totale litri','Totale €','Pagato','Consegnato','Per il','Note'],
-    ...V.map(o=>[o.data,o.nome,o.cognome,o.telefono,OliOrd.latt(o),String(o.litri).replace('.',','),String(o.euro).replace('.',','),o.pagato?'sì':'no',o.consegnato?'sì':'no',o.perIl,o.note])];
+  const rows = [['Data','Nome','Cognome','Telefono','Formati','Totale litri','Totale €','Pagato','Consegnato','Regalato','Per il','Note'],
+    ...V.map(o=>[o.data,o.nome,o.cognome,o.telefono,OliOrd.latt(o),String(o.litri).replace('.',','),String(o.euro).replace('.',','),o.pagato?'sì':'no',o.consegnato?'sì':'no',o.regalato?'sì':'no',o.perIl,o.note])];
   const a = document.createElement('a');
   a.href = URL.createObjectURL(new Blob(['﻿'+rows.map(r=>r.map(q).join(';')).join('\n')],{type:'text/csv'}));
   a.download = 'oliamo-ordini'+($('py').value?'-'+$('py').value:'')+'.csv'; a.click();
