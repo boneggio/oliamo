@@ -115,7 +115,7 @@
   const num = s => parseFloat(String(s || '').replace(',', '.')) || 0;
   const dIt = s => { const d = String(s || '').slice(0, 10).split('-'); return d.length === 3 ? `${+d[2]}/${+d[1]}/${d[0].slice(2)}` : ''; };
   const paid = o => +o.paid || 0;
-  const rest = o => Math.max(0, r2(o.euro - paid(o)));
+  const rest = o => o.regalato ? 0 : Math.max(0, r2(o.euro - paid(o)));
   const cons = o => Math.min(o.litri, +o.consegnati || 0);
   const left = o => Math.max(0, o.litri - cons(o));
   const done = o => rest(o) <= 0.005 && left(o) <= 0;
@@ -188,8 +188,8 @@
   /** Cosa manca: litri ancora da dare e soldi ancora da avere */
   const remTxt = o => {
     const L = left(o), R = rest(o);
-    if (!L && R <= 0.005) return '<span class="om-r ok">✓ Consegnato e pagato</span>';
-    return `<span class="om-r">${L ? `<span class="r">🫒 Da dare <b>${lt(L)}</b></span>` : '<span class="ok">🫒 Consegnato ✓</span>'}${R > 0.005 ? `<span class="r">💶 Da avere <b>${eur(R)}</b></span>` : '<span class="ok">💶 Pagato ✓</span>'}</span>`;
+    if (!L && R <= 0.005) return `<span class="om-r ok">✓ Consegnato e ${o.regalato ? 'regalato 🎁' : 'pagato'}</span>`;
+    return `<span class="om-r">${L ? `<span class="r">🫒 Da dare <b>${lt(L)}</b></span>` : '<span class="ok">🫒 Consegnato ✓</span>'}${o.regalato ? '<span class="ok">🎁 Regalato</span>' : R > 0.005 ? `<span class="r">💶 Da avere <b>${eur(R)}</b></span>` : '<span class="ok">💶 Pagato ✓</span>'}</span>`;
   };
   const mini = (o, opt) => {
     const op = miniOpen.has(o.id) || forms.has(o.id);
@@ -209,10 +209,11 @@
     <div class="oo-w">${per}${dIt(o.data)}${qty ? ` · ${qty}` : ''}${o.telefono ? ` · <a href="tel:${esc(o.telefono)}">${esc(o.telefono)}</a>` : ''}</div></div>
     <div class="oo-e"><b>${eur(o.euro)}</b><small>${lt(o.litri)}</small></div></div>
   ${o.note ? `<div class="oo-nt">“${esc(o.note)}”</div>` : ''}
-  <div class="oo-s2"><span class="${L ? 'r' : 'ok'}">🫒 Consegnati <b>${lt(c)}</b> di ${lt(o.litri)}${L ? '' : ' ✓'}</span><span class="${R > 0.005 ? 'r' : 'ok'}">💶 Pagati <b>${eur(p)}</b> di ${eur(o.euro)}${R > 0.005 ? '' : ' ✓'}</span></div>
+  <div class="oo-s2"><span class="${L ? 'r' : 'ok'}">🫒 Consegnati <b>${lt(c)}</b> di ${lt(o.litri)}${L ? '' : ' ✓'}</span>${o.regalato ? `<span class="ok">🎁 Regalato · valore ${eur(o.euro)}</span>` : `<span class="${R > 0.005 ? 'r' : 'ok'}">💶 Pagati <b>${eur(p)}</b> di ${eur(o.euro)}${R > 0.005 ? '' : ' ✓'}</span>`}</div>
   <div class="oo-k">
     <button type="button" class="oo-kd ${L ? '' : 'on'}" data-oa="kdlv" aria-pressed="${!L}" title="${L ? "Segna tutto l'olio come consegnato" : 'Togli la consegna'}"><span class="ck">${L ? '' : '✓'}</span>Consegnato</button>
-    <div class="oo-kp ${R > 0.005 ? '' : 'on'}"><span>${R > 0.005 ? (usedM(o).length ? 'Pagato in parte' : 'Pagamento') : `✓ Pagato <span class="mt">${usedM(o).map(m => ({ contanti: 'in contanti', satispay: 'Satispay', paypal: 'PayPal' })[m] || '').join(' + ')}</span>`}</span>${['contanti', 'satispay', 'paypal'].map(m => `<button type="button" data-oa="kpay" data-m="${m}" class="${usedM(o).includes(m) ? 'on' : ''}" aria-pressed="${usedM(o).includes(m)}" title="${R > 0.005 ? 'Pagato ' + MNAME[m] : usedM(o).includes(m) ? 'Togli il pagamento' : 'Cambia: pagato ' + MNAME[m]}" aria-label="Pagato ${MNAME[m]}">${ICO[m]}</button>`).join('')}</div>
+    <button type="button" class="oo-kd ${o.regalato ? 'on' : ''}" data-oa="kgift" aria-pressed="${!!o.regalato}" title="${o.regalato ? 'Togli: non è più un regalo' : 'Segna come regalato (non entra negli incassi)'}"><span class="ck">${o.regalato ? '✓' : ''}</span>🎁 Regalato</button>
+    ${o.regalato ? '' : `<div class="oo-kp ${R > 0.005 ? '' : 'on'}"><span>${R > 0.005 ? (usedM(o).length ? 'Pagato in parte' : 'Pagamento') : `✓ Pagato <span class="mt">${usedM(o).map(m => ({ contanti: 'in contanti', satispay: 'Satispay', paypal: 'PayPal' })[m] || '').join(' + ')}</span>`}</span>${['contanti', 'satispay', 'paypal'].map(m => `<button type="button" data-oa="kpay" data-m="${m}" class="${usedM(o).includes(m) ? 'on' : ''}" aria-pressed="${usedM(o).includes(m)}" title="${R > 0.005 ? 'Pagato ' + MNAME[m] : usedM(o).includes(m) ? 'Togli il pagamento' : 'Cambia: pagato ' + MNAME[m]}" aria-label="Pagato ${MNAME[m]}">${ICO[m]}</button>`).join('')}</div>`}
   </div>
   <details class="oo-adv" data-adv${f || advOpen.has(o.id) ? ' open' : ''}><summary>⚙️ Gestione avanzata ▾</summary><div>
   ${f ? formHtml(o, f) : L || R > 0.005 ? `<div class="oo-a">
@@ -264,6 +265,11 @@
       if (a === 'kdlv') {   // "Consegnato": tutto l'olio consegnato / togli la consegna
         const on = left(o) > 0;
         run({ action: 'flag', ids: [id], field: 'consegnato', value: on }, on ? `${o.nome}: olio consegnato ✓` : `${o.nome}: consegna tolta`);
+        return;
+      }
+      if (a === 'kgift') {   // "Regalato": niente soldi da avere, non entra negli incassi
+        const on = !o.regalato;
+        run({ action: 'flag', ids: [id], field: 'regalato', value: on }, on ? `${o.nome}: regalato 🎁` : `${o.nome}: non più regalato`);
         return;
       }
       if (a === 'kpay') {   // icona del metodo: paga il resto così / tocca di nuovo per togliere / cambia metodo
@@ -345,7 +351,7 @@
       hb.querySelector('[data-mh-n]').textContent = M.length ? `(${M.length})` : '';
       hb.querySelector('[data-mh-s]').innerHTML = M.length ? `<span>🫒 <b>${lt(M.reduce((t, o) => t + o.litri, 0))}</b></span><span>💶 incassati <b>${eur(inc)}</b></span>${dap > 0.005 ? `<span class="r">da avere <b>${eur(dap)}</b></span>` : ''}` : '';
       hb.querySelector('[data-mh]').innerHTML = M.map(o => `<div class="mh-r"><span class="d">${dIt(o.data)}</span><b>${esc(o.nome)} ${esc(o.cognome || '')}</b><span>${latt(o)}</span><span>${eur(o.euro)}</span>${rest(o) > 0.005
-        ? `<span class="r">da avere ${eur(rest(o))}</span>` : `<span class="ok">✓ ${usedM(o).map(m => ({ contanti: 'contanti', satispay: 'Satispay', paypal: 'PayPal' })[m] || '').join(' + ') || 'pagato'}</span>`}</div>`).join('') || "<p class=\"hint\">Ancora niente olio dato a mano.</p>";
+        ? `<span class="r">da avere ${eur(rest(o))}</span>` : o.regalato ? '<span class="ok">🎁 regalato</span>' : `<span class="ok">✓ ${usedM(o).map(m => ({ contanti: 'contanti', satispay: 'Satispay', paypal: 'PayPal' })[m] || '').join(' + ') || 'pagato'}</span>`}</div>`).join('') || "<p class=\"hint\">Ancora niente olio dato a mano.</p>";
     };
     const qOf = f => { const o = {}; f.querySelectorAll('[data-fid]').forEach(i => { const v = Math.max(0, parseInt(i.value, 10) || 0); if (v) o[i.dataset.fid] = v; }); return o; };
     const sumOf = (Q, k) => r2(F.reduce((t, f) => t + (Q[f.id] || 0) * f[k], 0));
