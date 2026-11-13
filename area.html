@@ -296,11 +296,11 @@ document.addEventListener('click', async e => {
 function renderOrders(){
   const O = D.orders || [], done = OliOrd.done;
   const dc = O.reduce((t,o)=>t+OliOrd.left(o),0), di = O.reduce((t,o)=>t+OliOrd.rest(o),0), aperte = O.filter(o=>!done(o)).length;
-  $('obadge').innerHTML = [aperte ? `<span data-go="">${aperte} ${aperte === 1 ? 'aperto' : 'aperti'}</span>` : '<span>Tutto in ordine ✓</span>', dc ? `<span data-go="nc">🫒 ${dc} lt da dare</span>` : '', di > 0.005 ? `<span data-go="np">💶 ${eur(di)} da avere</span>` : ''].join('');
+  $('obadge').innerHTML = [aperte ? `<span data-go="">${aperte} ${aperte === 1 ? 'aperto' : 'aperti'}</span>` : '<span>Tutto in ordine ✓</span>', dc ? `<span data-go="nc">🫒 ${dc} lt da dare</span>` : '', di > 0.005 ? `<span data-go="np">💶 ${eur(di)} da avere</span>` : '', O.some(o=>o.regalato) ? `<span data-go="rg">🎁 ${eur(O.filter(o=>o.regalato).reduce((t,o)=>t+o.euro,0))} regalati</span>` : ''].join('');
   $('ordList').hidden = of === null; $('odoneBox').hidden = false;
   document.querySelectorAll('#obadge [data-go]').forEach(x => x.classList.toggle('on', x.dataset.go === of));
-  $('olTitle').textContent = ({'':'Ordini aperti', nc:'Olio da dare', np:'Soldi da avere'})[of] || 'Ordini';
-  const V = of === null ? [] : O.filter(o => !done(o) && (of==='np' ? OliOrd.rest(o) > 0.005 : of==='nc' ? OliOrd.left(o) > 0 : true)).sort((a,b)=>b.data.localeCompare(a.data));
+  $('olTitle').textContent = ({'':'Ordini aperti', nc:'Olio da dare', np:'Soldi da avere', rg:'Olio regalato'})[of] || 'Ordini';
+  const V = of === null ? [] : of === 'rg' ? O.filter(o => o.regalato).sort((a,b)=>b.data.localeCompare(a.data)) : O.filter(o => !done(o) && (of==='np' ? OliOrd.rest(o) > 0.005 : of==='nc' ? OliOrd.left(o) > 0 : true)).sort((a,b)=>b.data.localeCompare(a.data));
   const vis = allO ? V : V.slice(0,15);
   $('ords').innerHTML = vis.map(o => OliOrd.mini(o, { del: true })).join('') || `<p class="empty">${O.length ? 'Nessun ordine aperto in questo elenco.' : 'Ancora nessun ordine.'}</p>`;
   const F = O.filter(done).sort((a,b)=>b.data.localeCompare(a.data));
