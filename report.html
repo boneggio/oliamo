@@ -494,7 +494,7 @@ function renderTrash(){
 }
 function ordersView(){
   const y = $('py').value, s = $('ps').value.trim().toLowerCase();
-  return D.orders.filter(o => (!y || o.data.startsWith(y)) && (pf==='np' ? OliOrd.rest(o) > 0.005 : pf==='nc' ? OliOrd.left(o) > 0 : pf==='ap' ? !OliOrd.done(o) : true)
+  return D.orders.filter(o => (!y || o.data.startsWith(y)) && (pf==='np' ? OliOrd.rest(o) > 0.005 : pf==='nc' ? OliOrd.left(o) > 0 : pf==='ap' ? !OliOrd.done(o) : pf==='rg' ? o.regalato : true)
     && (!s || (o.nome+' '+o.cognome).toLowerCase().includes(s))).sort((a,b)=>b.data.localeCompare(a.data));
 }
 function renderOrders(){
@@ -504,7 +504,7 @@ function renderOrders(){
   [...sel].forEach(id => { if(!D.orders.some(o=>o.id===id)) sel.delete(id); });
   { const aperte = D.orders.filter(o=>!OliOrd.done(o)).length,
       dc = D.orders.reduce((t,o)=>t+OliOrd.left(o),0), di = D.orders.reduce((t,o)=>t+OliOrd.rest(o),0);
-    $('obadge').innerHTML = [`<span data-go="">📋 Tutte</span>`, aperte ? `<span data-go="ap">${aperte} ${aperte===1?'aperto':'aperti'}</span>` : '<span>Tutto in ordine ✓</span>', dc ? `<span data-go="nc">🫒 ${dc} lt da dare</span>` : '', di > 0.005 ? `<span data-go="np">💶 ${eur(di)} da avere</span>` : ''].join(''); }
+    $('obadge').innerHTML = [`<span data-go="">📋 Tutte</span>`, aperte ? `<span data-go="ap">${aperte} ${aperte===1?'aperto':'aperti'}</span>` : '<span>Tutto in ordine ✓</span>', dc ? `<span data-go="nc">🫒 ${dc} lt da dare</span>` : '', di > 0.005 ? `<span data-go="np">💶 ${eur(di)} da avere</span>` : '', (()=>{ const g = D.orders.filter(o=>o.regalato); return g.length ? `<span data-go="rg">🎁 ${eur(g.reduce((t,o)=>t+o.euro,0))} regalati</span>` : ''; })()].join(''); }
   document.querySelectorAll('#obadge [data-go]').forEach(x => x.classList.toggle('on', !$('prenList').hidden && x.dataset.go === pf)); $('plTitle').textContent = PTIT[pf] || 'Ordini';
   $('ptb').innerHTML = V.map(o=>`<tr class="${OliOrd.done(o)?'done':''}">
     <td class="c"><input type="checkbox" data-sel="${esc(o.id)}" ${sel.has(o.id)?'checked':''} aria-label="Seleziona"></td>
@@ -554,7 +554,7 @@ $('tabs').onclick = e => { const b=e.target.closest('button'); if(!b) return; ta
   document.querySelectorAll('#tabs button').forEach(x=>x.classList.toggle('on',x===b));
   document.querySelectorAll('[data-p]').forEach(p=>p.hidden = p.dataset.p!==tab); if(tab==='gra'&&chart) chart.update({}); if(tab==='sic') secLoad(); };
 // clic sui riepiloghi della tendina: apre e mostra l'elenco giusto
-const PTIT = {'':'Tutti gli ordini', ap:'Ordini aperti', nc:'Olio da dare', np:'Soldi da avere'};
+const PTIT = {'':'Tutti gli ordini', ap:'Ordini aperti', nc:'Olio da dare', np:'Soldi da avere', rg:'Olio regalato'};
 const showList = go => { const L = $('prenList'); if (go === null) { L.hidden = true; } else { L.hidden = false; pf = go;
     document.querySelectorAll('#pf button').forEach(x=>x.classList.toggle('on',x.dataset.f===pf)); renderOrders(); }
   document.querySelectorAll('#obadge [data-go]').forEach(x => x.classList.toggle('on', !L.hidden && x.dataset.go === pf)); $('plTitle').textContent = PTIT[pf] || 'Ordini'; };
